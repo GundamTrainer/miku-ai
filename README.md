@@ -1,0 +1,2 @@
+# miku-ai
+school project
