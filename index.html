@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Miku AI — 初音ミク</title>
+<title>GundamTrainer AI</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;700&family=Share+Tech+Mono&display=swap');
 
@@ -499,8 +499,8 @@
   <div class="logo">
     <div class="logo-mark">01</div>
     <div>
-      <div class="logo-text">初音ミク AI</div>
-      <div class="logo-sub">VOCALOID INTERFACE v1.02</div>
+      <div class="logo-text">GundamTrainer AI</div>
+      <div class="logo-sub">MIKU INTERFACE v1.02</div>
     </div>
   </div>
   <div class="status-bar">
@@ -713,26 +713,29 @@ function startMMDLoad() {
   }
 
   const loader = new THREE.MMDLoader();
-  const modelFile = `${currentModel}.pmx`;
+  // GitHub Pages에서 PMX 로드 (같은 origin이라 CORS 없음)
+  const modelFile = `./${currentModel}.pmx`;
 
+  // 텍스처 경로도 같은 폴더로
   loader.load(
     modelFile,
     (object) => {
       if (mesh) scene.remove(mesh);
       mesh = object;
       mesh.position.set(0, 0, 0);
+      mesh.scale.set(0.1, 0.1, 0.1); // PMX 단위 조정
       scene.add(mesh);
 
-      // 모프 타겟 수집
       collectMorphTargets();
-
       hideLoading();
       document.getElementById('status-text').textContent = 'ONLINE';
       animate();
     },
     (progress) => {
-      const pct = Math.round(progress.loaded / progress.total * 100);
-      document.getElementById('loading-progress').textContent = `${pct}%`;
+      if (progress.total > 0) {
+        const pct = Math.round(progress.loaded / progress.total * 100);
+        document.getElementById('loading-progress').textContent = `${pct}%`;
+      }
     },
     (error) => {
       console.warn('MMD load failed:', error);
