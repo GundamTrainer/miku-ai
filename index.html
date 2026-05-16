@@ -577,10 +577,10 @@
 <!-- Three.js -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script>
-// ── mmdparser 인라인 로드 및 종속성 순서 교정 ──
+// ── CORS 및 404가 발생하지 않는 정식 CDN 주소 스크립트 결합 ──
 (function() {
   const scripts = [
-    'https://unpkg.com/mmdparser@1.0.4/build/mmdparser.min.js', // 정식 안정화 주소로 변경하여 404 및 MIME 에러 해결
+    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/libs/mmdparser.min.js', // CDN 배포 원본 파일 직접 연동하여 CORS 전면 해결
     'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/TGALoader.js',
     'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MMDLoader.js'
   ];
@@ -614,7 +614,7 @@ const EMOTIONS = {
   happy:   { emoji: '😊', morph: { 'にっこり': 0.8, '笑い': 0.5 } },
   sad:     { emoji: '😢', morph: { '困る': 0.7, '悲しい': 0.6 } },
   angry:   { emoji: '😠', morph: { '怒り': 0.8 } },
-  surprised:{ emoji: '😲', morph: { '驚기': 0.9 } },
+  surprised:{ emoji: '😲', morph: { '驚き': 0.9 } },
   neutral: { emoji: '😐', morph: {} },
 };
 
@@ -690,7 +690,6 @@ function initThree() {
 //  MMD 모델 로드
 // ══════════════════════════════════════
 function loadMMDModel() {
-  // MMDLoader 준비될 때까지 대기 (최대 10초)
   let waited = 0;
   const check = setInterval(() => {
     waited += 200;
@@ -713,17 +712,15 @@ function startMMDLoad() {
   }
 
   const loader = new THREE.MMDLoader();
-  // GitHub Pages에서 PMX 로드 (같은 origin이라 CORS 없음)
   const modelFile = `./${currentModel}.pmx`;
 
-  // 텍스처 경로도 같은 폴더로
   loader.load(
     modelFile,
     (object) => {
       if (mesh) scene.remove(mesh);
       mesh = object;
       mesh.position.set(0, 0, 0);
-      mesh.scale.set(0.1, 0.1, 0.1); // PMX 단위 조정
+      mesh.scale.set(0.1, 0.1, 0.1); 
       scene.add(mesh);
 
       collectMorphTargets();
@@ -754,17 +751,19 @@ function collectMorphTargets() {
 }
 
 // ══════════════════════════════════════
-//  폴백: PMX 파일이 없을 때 예쁜 대체 화면
+//  폴백 처리
 // ══════════════════════════════════════
 function showFallbackMiku() {
   hideLoading();
   document.getElementById('status-text').textContent = 'MODEL ERROR — UI ONLINE';
 
-  // 3D 캔버스에 아름다운 파티클 미쿠 실루엣 표시
   const container = document.getElementById('canvas-container');
 
-  // SVG 실루엣 추가
+  // 중복 생성 방지용 체크
+  if (container.querySelector('.fallback-silhouette')) return;
+
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'fallback-silhouette');
   svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;';
   svg.innerHTML = `
     <defs>
@@ -778,20 +777,15 @@ function showFallbackMiku() {
     </defs>
     <rect width="100%" height="100%" fill="url(#glow)"/>
     
-    <!-- 미쿠 실루엣 (CSS transform 문법 오류 완전 수정) -->
     <g style="transform: translate(50%, 50%);" text-anchor="middle">
-      <!-- 트윈테일 -->
       <ellipse cx="-80" cy="-120" rx="15" ry="60" fill="none" stroke="#39c5bb" stroke-width="1.5" stroke-opacity="0.6" transform="rotate(-30,-80,-120)" filter="url(#blur)"/>
       <ellipse cx="80" cy="-120" rx="15" ry="60" fill="none" stroke="#39c5bb" stroke-width="1.5" stroke-opacity="0.6" transform="rotate(30,80,-120)" filter="url(#blur)"/>
-      <!-- 몸통 실루엣 -->
       <ellipse cx="0" cy="-60" rx="35" ry="45" fill="none" stroke="#39c5bb" stroke-width="1" stroke-opacity="0.4"/>
       <ellipse cx="0" cy="30" rx="25" ry="60" fill="none" stroke="#39c5bb" stroke-width="1" stroke-opacity="0.3"/>
-      <!-- 텍스트 -->
       <text y="140" font-family="Share Tech Mono" font-size="14" fill="#39c5bb" opacity="0.6" letter-spacing="8">初音ミク</text>
       <text y="165" font-family="Share Tech Mono" font-size="10" fill="#39c5bb" opacity="0.3" letter-spacing="4">VOCALOID 01</text>
     </g>
     
-    <!-- 파티클들 -->
     ${Array.from({length:30}, (_,i) => {
       const x = Math.random()*100;
       const y = Math.random()*100;
@@ -806,12 +800,11 @@ function showFallbackMiku() {
   `;
   container.appendChild(svg);
 
-  // 모델 파일 안내 메시지
   addMessage('system',
-    '⚠️ 모델 파일을 찾을 수 없어요.\n' +
-    'index.html과 같은 폴더에 "models/" 폴더를 만들고\n' +
-    'Black.pmx, White.pmx와 텍스처 파일들을 넣어주세요!\n\n' +
-    '그 전까지는 텍스트로 대화 가능해요 🎵'
+    '⚠️ 모델 로드 대기 중이거나 로컬 경로에 모델이 부재합니다.\n' +
+    '저장소 root(가장 바깥 경로)에 Black.pmx, White.pmx 파일과\n' +
+    '관련 텍스처들이 들어있는지 검증해주세요.\n\n' +
+    '연결이 수립될 때까지 텍스트 전송 세션은 유지됩니다 🎵'
   );
 
   animate();
@@ -834,18 +827,15 @@ function animate() {
   const time = clock ? clock.getElapsedTime() : 0;
 
   if (mesh) {
-    // 자연스러운 흔들림
     mesh.rotation.y = Math.sin(time * 0.3) * 0.05;
     mesh.position.y = Math.sin(time * 0.5) * 0.15;
 
-    // 말하는 중 입 애니메이션
     if (isSpeaking) {
       setMorph('あ', Math.abs(Math.sin(time * 8)) * 0.7);
     } else {
       setMorph('あ', 0);
     }
 
-    // 눈 깜빡임
     if (Math.floor(time * 10) % 40 === 0) {
       setMorph('まばたき', 1);
     } else if (Math.floor(time * 10) % 40 === 2) {
@@ -874,9 +864,7 @@ function applyEmotion(emotionKey) {
   const e = EMOTIONS[emotionKey];
   document.getElementById('emotion-value').textContent = `${e.emoji} ${emotionKey.toUpperCase()}`;
 
-  // 기존 표정 초기화
   ['にっこり','笑い','困る','悲しい','怒り','驚き'].forEach(m => setMorph(m, 0));
-  // 새 표정 적용
   Object.entries(e.morph).forEach(([name, val]) => {
     setMorph(name, val);
   });
@@ -894,6 +882,10 @@ function selectModel(name) {
     scene.remove(mesh);
     mesh = null;
   }
+
+  // 폴백 엘리먼트가 남아있다면 제거
+  const oldFallback = document.querySelector('.fallback-silhouette');
+  if (oldFallback) oldFallback.remove();
 
   const loadingDiv = document.createElement('div');
   loadingDiv.id = 'loading';
@@ -977,7 +969,6 @@ async function callGemini(userText) {
     const data = await res.json();
     let reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '...';
 
-    // 감정 추출
     const emotionMatch = reply.match(/\[EMOTION:(\w+)\]/);
     if (emotionMatch) {
       applyEmotion(emotionMatch[1]);
@@ -1009,12 +1000,11 @@ async function sendMessage(text) {
 }
 
 // ══════════════════════════════════════
-//  Web Speech API - TTS (한국어 고정)
+//  Web Speech API - TTS 보이스 보완 필터 적용
 // ══════════════════════════════════════
 function speak(text) {
   if (!window.speechSynthesis) return;
 
-  // 이모지, 일본어/한자, 특수문자 제거 → 한국어만 읽기
   const clean = text
     .replace(/[\u{1F300}-\u{1FFFF}]/gu, '')
     .replace(/[\u3000-\u9fff]/g, '')
@@ -1024,18 +1014,21 @@ function speak(text) {
   if (!clean) return;
 
   const utter = new SpeechSynthesisUtterance(clean);
-
-  // 한국어 목소리만 선택
   const voices = speechSynthesis.getVoices();
-  const koVoice =
-    voices.find(v => v.lang === 'ko-KR' && /female|yuna|나나|미진/i.test(v.name)) ||
+
+  // [보완] 걸걸한 기본 중년/남성 보이스 배제를 위해 한글 전용 하이톤 여성/유아 보이스 키워드 확장 검색 필터
+  const mikuVoice =
+    voices.find(v => v.lang === 'ko-KR' && /Yuna|Nana|Mijin|Minji|Sumi|Heami|Jinhwa|Sunhi/i.test(v.name)) ||
+    voices.find(v => v.lang === 'ko-KR' && /female|여성|혜미|자경/i.test(v.name)) ||
     voices.find(v => v.lang === 'ko-KR') ||
     voices.find(v => v.lang.startsWith('ko'));
 
-  if (koVoice) utter.voice = koVoice;
+  if (mikuVoice) utter.voice = mikuVoice;
   utter.lang = 'ko-KR';
-  utter.pitch = 1.4;
-  utter.rate = 1.05;
+  
+  // 브라우저 TTS 스펙 내에서 가래 끓는 소리를 억제하고 앵앵거리는 미쿠 톤을 내도록 Pitch 한계치 상승
+  utter.pitch = 1.6;  
+  utter.rate = 1.1;   
 
   utter.onstart = () => { isSpeaking = true; };
   utter.onend   = () => { isSpeaking = false; setMorph('あ', 0); };
@@ -1107,7 +1100,6 @@ function toggleMic() {
 // ══════════════════════════════════════
 window.addEventListener('load', () => {
   initThree();
-  // 보이스 목록 미리 로드
   if (window.speechSynthesis) {
     speechSynthesis.getVoices();
     speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
