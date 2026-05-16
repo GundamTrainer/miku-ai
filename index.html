@@ -577,10 +577,10 @@
 <!-- Three.js -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script>
-// ── mmdparser 인라인 로드 ──
+// ── mmdparser 인라인 로드 및 종속성 순서 교정 ──
 (function() {
   const scripts = [
-    'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/mmdparser.min.js',
+    'https://unpkg.com/mmdparser@1.0.4/build/mmdparser.min.js', // 정식 안정화 주소로 변경하여 404 및 MIME 에러 해결
     'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/TGALoader.js',
     'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MMDLoader.js'
   ];
@@ -614,7 +614,7 @@ const EMOTIONS = {
   happy:   { emoji: '😊', morph: { 'にっこり': 0.8, '笑い': 0.5 } },
   sad:     { emoji: '😢', morph: { '困る': 0.7, '悲しい': 0.6 } },
   angry:   { emoji: '😠', morph: { '怒り': 0.8 } },
-  surprised:{ emoji: '😲', morph: { '驚き': 0.9 } },
+  surprised:{ emoji: '😲', morph: { '驚기': 0.9 } },
   neutral: { emoji: '😐', morph: {} },
 };
 
@@ -778,8 +778,8 @@ function showFallbackMiku() {
     </defs>
     <rect width="100%" height="100%" fill="url(#glow)"/>
     
-    <!-- 미쿠 실루엣 (간단한 형태) -->
-    <g transform="translate(50%,50%)" text-anchor="middle">
+    <!-- 미쿠 실루엣 (CSS transform 문법 오류 완전 수정) -->
+    <g style="transform: translate(50%, 50%);" text-anchor="middle">
       <!-- 트윈테일 -->
       <ellipse cx="-80" cy="-120" rx="15" ry="60" fill="none" stroke="#39c5bb" stroke-width="1.5" stroke-opacity="0.6" transform="rotate(-30,-80,-120)" filter="url(#blur)"/>
       <ellipse cx="80" cy="-120" rx="15" ry="60" fill="none" stroke="#39c5bb" stroke-width="1.5" stroke-opacity="0.6" transform="rotate(30,80,-120)" filter="url(#blur)"/>
@@ -819,8 +819,10 @@ function showFallbackMiku() {
 
 function hideLoading() {
   const el = document.getElementById('loading');
-  el.classList.add('hidden');
-  setTimeout(() => el.remove(), 1000);
+  if (el) {
+    el.classList.add('hidden');
+    setTimeout(() => el.remove(), 1000);
+  }
 }
 
 // ══════════════════════════════════════
