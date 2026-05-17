@@ -255,7 +255,7 @@ function init3D(){
   controls = new OrbitControls(cam, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
-  controls.minDistance = 0.3;      
+  controls.minDistance = 0.3;     
   controls.maxDistance = 60;
   
   clock=new THREE.Clock();
@@ -706,205 +706,193 @@ function cleanForTTS(text){
 }
 
 async function gemini(text){
-  if(!KEY) return '먼저 우측 하단 레이어에 Gemini API 키를 입력해 주세요!';
+  if(!KEY)return'먼저 우측 하단 레이어에 Gemini API 키를 입력해 주세요!';
   
-  // 페르소나 및 감정 시스템 주입 프롬프트 설계
-  const history = [
-    {
-      role: "user",
-      parts: [{ text: "너는 구동 기믹과 알고리즘을 학습하는 GundamTrainer AI 비서 '미쿠'야. 답변 끝에는 반드시 캐릭터의 감정 상태를 [EMOTION:happy], [EMOTION:sad], [EMOTION:angry], [EMOTION:surprised], [EMOTION:neutral] 중 하나를 택해서 정확히 '[EMOTION:감정]' 형태로 한 개만 덧붙여줘." }]
-    },
-    {
-      role: "model",
-      parts: [{ text: "알았어! 마스터, 어떤 기믹이나 시스템에 대해 알아볼까? 시스템 스탠바이 완료야! [EMOTION:happy]" }]
-    }
-  ];
-
-  history.push({
-    role: "user",
-    parts: [{ text: text }]
-  });
-
-  // v1beta 최신 규격과 공식 엔드포인트 URL 구조 결합
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${KEY}`;
+  const sys=`너는 하츠네 미쿠야. 귀엽고 밝은 버추얼 아이돌이야.
+반드시 대화 응답의 최종 화면 출력 텍스트는 한국어로만 작성해.
+대신에, 시스템 내부 연동 음성 출력을 위한 완벽하게 어울리는 자연스러운 일본어 구문을 응답 맨 끝에 [JA_TTS: 일본어 구문 문장] 형태로 매번 반드시 추가해줘. 화면상에서는 이 태그가 필터링되어 유저에게 보이지 않을 거야.
+짧고 친근하게 말해. 이모지나 특수문자 기호는 절대 쓰지마.
+답변 끝에 반드시 감정 표시용 [EMOTION:happy] [EMOTION:sad] [EMOTION:angry] [EMOTION:surprised] [EMOTION:neutral] 중 하나를 매칭해서 붙여.`;
   
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: history })
+  try{
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${KEY}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:`${sys}\n\n사용자: ${text}`}]}]})
     });
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      console.error("API Error Object:", errData);
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if(!r.ok){const e=await r.json();return`오류: ${e.error?.message||'unknown'}`;}
+    const data=await r.json();
+    let rep=data.candidates?.[0]?.content?.parts?.[0]?.text||'...';
+    
+    const m=rep.match(/\[EMOTION:(\w+)\]/);
+    if(m){
+      applyEmotion(m[1]);
+      rep=rep.replace(/\[EMOTION:\w+\]/g,'').trim();
     }
-
-    const data = await response.json();
-    if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
-      return data.candidates[0].content.parts[0].text;
-    } else {
-      return "응답 데이터 구조가 올바르지 않아. 다시 시도해줘! [EMOTION:neutral]";
+    
+    // 분석 결과를 바탕으로 100가지 액션 중 최적화 타겟 지정 및 UI 업데이트
+    activeAction = determineAction(text, curEmotion);
+    document.getElementById('action-val').textContent = `🎭 [${activeAction.id}/100] ${activeAction.name}`;
+    
+    let jaSpeech = '';
+    const jm = rep.match(/\[JA_TTS:\s*(.*?)\s*\]/);
+    if(jm){
+      jaSpeech = jm[1];
+      rep = rep.replace(/\[JA_TTS:.*?\]/g, '').trim();
     }
-  } catch (error) {
-    console.error("Gemini API 호출 오류:", error);
-    return `통신 중 에러가 발생했어, 마스터. API 키나 네트워크 상태를 확인해줘. [EMOTION:sad]`;
-  }
+    
+    return { koText: rep, jaText: jaSpeech };
+  }catch(e){return { koText: `연결 오류: ${e.message}`, jaText: '' };}
 }
 
-window.send = async function() {
-  if (speaking) return;
-  const input = document.getElementById('ti');
-  const text = input.value.trim();
-  if (!text) return;
-
-  input.value = '';
-  addMsg('u', text);
-  showTyping();
-
-  const reply = await gemini(text);
+window.send=async function(t){
+  const inp=document.getElementById('ti');
+  const msg=t||inp.value.trim();
+  if(!msg)return;
+  inp.value='';
+  addMsg('u',msg);showTyping();
+  
+  const result=await gemini(msg);
   rmTyping();
-
-  // 감정 태그 추출 및 처리
-  let emo = 'neutral';
-  const emoMatch = reply.match(/\[EMOTION:(\w+)\]/);
-  if (emoMatch && emoMatch[1]) {
-    const parsedEmo = emoMatch[1].toLowerCase();
-    if (EMOTIONS[parsedEmo]) emo = parsedEmo;
-  }
   
-  applyEmotion(emo);
-
-  // 100가지 액션 매트릭스 엔진 가동 및 인디케이터 업데이트
-  activeAction = determineAction(text, emo);
-  document.getElementById('action-val').textContent = `🏃 ${activeAction.name}`;
-
-  const cleanReply = cleanForTTS(reply);
-  addMsg('m', cleanReply);
-
-  // 음성 합성(TTS) 가동부 연동
-  if ('speechSynthesis' in window) {
-    speaking = true;
-    const utterance = new SpeechSynthesisUtterance(cleanReply);
-    
-    // 한국어 구글 보이스 매칭 시도
-    const voices = window.speechSynthesis.getVoices();
-    const koVoice = voices.find(v => v.lang.includes('ko'));
-    if (koVoice) utterance.voice = koVoice;
-    
-    utterance.onend = () => { speaking = false; };
-    utterance.onerror = () => { speaking = false; };
-    window.speechSynthesis.speak(utterance);
+  if(typeof result === 'object'){
+    addMsg('m', result.koText);
+    speak(result.jaText || result.koText, !!result.jaText);
+  } else {
+    addMsg('m', result);
+    speak(result, false);
   }
 };
 
-// 마이크 음성 인식 시스템 정의
-window.toggleMic = function() {
-  if (listening) {
-    if (recog) recog.stop();
-    return;
-  }
-  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!Speech) {
-    addMsg('s', '이 브라우저는 음성 인식을 지원하지 않습니다.');
-    return;
-  }
-
-  // 오디오 분석기 가동 (볼륨 인디케이터용)
-  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    micStream = stream;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    analyser = audioCtx.createAnalyser();
-    const source = audioCtx.createMediaStreamSource(stream);
-    source.connect(analyser);
-    analyser.fftSize = 32;
-    
-    document.getElementById('vol-wrap').classList.add('active');
-    updateVolume();
-  }).catch(e => console.warn("마이크 권한 거부 또는 연결 실패:", e));
-
-  recog = new Speech();
-  recog.lang = 'ko-KR';
-  recog.continuous = false;
-  recog.interimResults = false;
-
-  recog.onstart = () => {
-    listening = true;
-    const btn = document.getElementById('mb2');
-    btn.classList.add('on');
-    btn.textContent = '🛑 인식 중... (다시 클릭시 종료)';
-    document.getElementById('mh').textContent = '듣고 있습니다... 말씀해 주세요.';
-  };
-
-  recog.onresult = (e) => {
-    const resultText = e.results[0][0].transcript;
-    document.getElementById('ti').value = resultText;
-    window.send();
-  };
-
-  recog.onerror = (e) => { console.error("음성 인식 오류:", e.error); stopMicUI(); };
-  recog.onend = () => { stopMicUI(); };
-  recog.start();
-};
-
-function stopMicUI() {
-  listening = false;
-  const btn = document.getElementById('mb2');
-  btn.classList.remove('on');
-  btn.textContent = '🎤 마이크로 말하기';
-  document.getElementById('mh').textContent = '클릭하면 음성인식 시작';
-  document.getElementById('vol-wrap').classList.remove('active');
+function speak(text, isJapanese=true){
+  if(!speechSynthesis)return;
+  const clean=cleanForTTS(text);
+  if(!clean)return;
   
-  if (volAnimId) cancelAnimationFrame(volAnimId);
-  if (micStream) {
-    micStream.getTracks().forEach(track => track.stop());
-    micStream = null;
-  }
-  if (audioCtx) {
-    audioCtx.close();
-    audioCtx = null;
-  }
-  // 볼륨 바 초기화
-  for (let i = 0; i < 12; i++) {
-    document.getElementById(`vb${i}`).style.height = '2px';
-  }
-  document.getElementById('vol-text').textContent = '0%';
+  speechSynthesis.cancel();
+  
+  setTimeout(() => {
+    const u=new SpeechSynthesisUtterance(clean);
+    const vs=speechSynthesis.getVoices();
+    
+    if(isJapanese) {
+      const jaVoice=
+        vs.find(v=>v.lang==='ja-JP'&&/nanami|haruka|kyoko|ichiro/i.test(v.name))||
+        vs.find(v=>v.lang==='ja-JP'&&/female|woman/i.test(v.name))||
+        vs.find(v=>v.lang==='ja-JP');
+      if(jaVoice) u.voice=jaVoice;
+      u.lang='ja-JP';
+    } else {
+      const koVoice=vs.find(v=>v.lang==='ko-KR'&&/female|yuna/i.test(v.name))||vs.find(v=>v.lang==='ko-KR');
+      if(koVoice)u.voice=koVoice;
+      u.lang='ko-KR';
+    }
+    
+    u.pitch=1.28; 
+    u.rate=1.02;
+    
+    u.onstart=()=>{
+      speaking=true;
+      lipT=0;
+    };
+    u.onend=()=>{
+      speaking=false;
+      // 발화가 완전히 종료되면 차분한 랜덤 대기 모션(1~20번 중 무작위)으로 자동 복귀
+      activeAction = selectFromMatrix('idle');
+      document.getElementById('action-val').textContent = `🧍 [${activeAction.id}/100] ${activeAction.name}`;
+    };
+    u.onerror=(e)=>{
+      console.error(e);
+      speaking=false;
+      activeAction = selectFromMatrix('idle');
+      document.getElementById('action-val').textContent = `🧍 [${activeAction.id}/100] ${activeAction.name}`;
+    };
+    
+    speechSynthesis.speak(u);
+  }, 100);
 }
 
-function updateVolume() {
-  if (!listening || !analyser) return;
-  volAnimId = requestAnimationFrame(updateVolume);
+function updateVolumeBars(){
+  if(!analyser || !listening) return;
   const dataArray = new Uint8Array(analyser.frequencyBinCount);
   analyser.getByteFrequencyData(dataArray);
   
   let sum = 0;
-  for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-  const avg = sum / dataArray.length;
-  const volPercent = Math.min(100, Math.round((avg / 128) * 100));
+  for(let i=0; i<dataArray.length; i++) sum += dataArray[i];
+  let avg = sum / dataArray.length;
   
-  document.getElementById('vol-text').textContent = `${volPercent}%`;
+  let pct = Math.min(100, Math.floor((avg / 128) * 100));
+  document.getElementById('vol-text').textContent = pct + '%';
   
-  // 12개 실시간 볼륨 바 렌더링 매핑 알고리즘
-  const activeBars = Math.floor((volPercent / 100) * 12);
-  for (let i = 0; i < 12; i++) {
-    const el = document.getElementById(`vb${i}`);
-    if (i < activeBars) {
-      el.style.height = `${Math.max(2, (dataArray[i % dataArray.length] / 255) * 28)}px`;
-    } else {
-      el.style.height = '2px';
-    }
+  for(let i=0; i<12; i++){
+    const b = document.getElementById(`vb${i}`);
+    let targetH = Math.max(2, Math.min(28, (dataArray[i*2] || 0) / 255 * 28));
+    b.style.height = targetH + 'px';
   }
+  volAnimId = requestAnimationFrame(updateVolumeBars);
 }
 
-// 초기화 가동 실행부
-init3D();
-loadMiku();
-// 음성 변환 보이스 로딩 최적화 핸들러
-if ('speechSynthesis' in window) {
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-}
+window.toggleMic=async function(){
+  const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!Speech){alert('이 브라우저는 음성 인식을 지원하지 않습니다.');return;}
+  
+  const b=document.getElementById('mb2');
+  const h=document.getElementById('mh');
+  const vw=document.getElementById('vol-wrap');
+  
+  if(listening){
+    if(recog)recog.stop();
+    listening=false;
+    b.classList.remove('on');
+    b.textContent='🎤 마이크로 말하기';
+    h.textContent='클릭하면 음성인식 시작';
+    vw.classList.remove('active');
+    if(volAnimId) cancelAnimationFrame(volAnimId);
+    if(micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+    return;
+  }
+  
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(micStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 64;
+    source.connect(analyser);
+    
+    listening=true;
+    b.classList.add('on');
+    b.textContent='🛑 인식 중... (말씀하세요)';
+    h.textContent='듣고 있습니다. 완료되면 말을 멈춰주세요.';
+    vw.classList.add('active');
+    updateVolumeBars();
+    
+    recog=new Speech();
+    recog.lang='ko-KR';
+    recog.continuous=false;
+    recog.interimResults=false;
+    
+    recog.onresult=(e)=>{
+      const t=e.results[0][0].transcript;
+      if(t&&t.trim()) window.send(t);
+    };
+    recog.onend=()=>{
+      if(listening) window.toggleMic();
+    };
+    recog.onerror=(err)=>{
+      console.error(err);
+      if(listening) window.toggleMic();
+    };
+    recog.start();
+  } catch(e) {
+    alert('마이크 오디오 장치 접근 권한이 없거나 에러가 발생했습니다.');
+    console.error(e);
+  }
+};
+
+window.addEventListener('DOMContentLoaded',()=>{
+  init3D();
+  loadMiku();
+});
 </script>
 </body>
 </html>
