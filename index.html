@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GundamTrainer AI</title>
+<title>GundamTrainer AI - Matrix Motion</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;700&family=Share+Tech+Mono&display=swap');
   :root{--teal:#39c5bb;--pink:#ff69b4;--dark:#0a0e1a;--darker:#060810;--glow:rgba(57,197,187,0.4);--panel:rgba(10,20,40,0.92);--main:#e0f7f5;--dim:rgba(224,247,245,0.5)}
@@ -58,13 +58,18 @@
   .btn{border:none;border-radius:8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.1em;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
   #sb{padding:9px 15px;background:var(--teal);color:var(--dark);font-weight:bold}
   #sb:hover{background:#4dd9cf;box-shadow:0 0 16px rgba(57,197,187,.5)}
+  /* 상태 인디케이터 라벨 */
+  #ed{display:flex;flex-direction:column;gap:5px;padding:9px 11px;background:rgba(57,197,187,.04);border:1px solid rgba(57,197,187,.1);border-radius:8px}
+  .ed-row{display:flex;justify-content:space-between;align-items:center}
+  .ed-lbl{font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:.15em}
+  .ed-val{font-size:11px;color:var(--teal);font-family:'Share Tech Mono',monospace}
+  #action-val{color:var(--pink)}
   /* 마이크 영역 */
   #mic-wrap{display:flex;flex-direction:column;gap:6px}
   #mb2{padding:11px 20px;background:rgba(255,105,180,.1);border:1px solid rgba(255,105,180,.3);color:var(--pink);font-size:13px;width:100%}
   #mb2:hover{background:rgba(255,105,180,.2)}
   #mb2.on{background:var(--pink);color:#fff;animation:mp 1s infinite}
   @keyframes mp{0%,100%{box-shadow:0 0 12px rgba(255,105,180,.5)}50%{box-shadow:0 0 28px rgba(255,105,180,.9)}}
-  /* 볼륨 시각화 */
   #vol-wrap{display:flex;align-items:center;gap:8px;height:28px;padding:0 4px;opacity:0;transition:opacity .3s}
   #vol-wrap.active{opacity:1}
   #vol-label{font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;white-space:nowrap}
@@ -72,7 +77,6 @@
   .vb{width:4px;background:var(--teal);border-radius:2px;transition:height .08s;min-height:2px}
   #vol-text{font-size:9px;color:var(--teal);font-family:'Share Tech Mono',monospace;min-width:30px;text-align:right}
   .mh{text-align:center;font-size:10px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:.12em}
-  /* API 키 */
   #aks{padding:11px;background:rgba(255,180,0,.06);border:1px solid rgba(255,180,0,.2);border-radius:8px}
   #akl{font-size:9px;color:rgba(255,180,0,.7);letter-spacing:.2em;font-family:'Share Tech Mono',monospace;margin-bottom:5px}
   #akr{display:flex;gap:6px}
@@ -81,9 +85,6 @@
   #msr{display:flex;gap:6px}
   .mb3{flex:1;padding:6px;background:rgba(57,197,187,.05);border:1px solid rgba(57,197,187,.15);color:var(--dim);font-size:10px;border-radius:6px;cursor:pointer;transition:all .2s;font-family:'Share Tech Mono',monospace}
   .mb3.active{background:rgba(57,197,187,.15);border-color:var(--teal);color:var(--teal)}
-  #ed{display:flex;gap:6px;align-items:center;padding:7px 11px;background:rgba(57,197,187,.04);border:1px solid rgba(57,197,187,.1);border-radius:8px}
-  #el{font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:.15em;flex:1}
-  #ev{font-size:11px;color:var(--teal);font-family:'Share Tech Mono',monospace}
   #msgs::-webkit-scrollbar{width:3px}
   #msgs::-webkit-scrollbar-track{background:transparent}
   #msgs::-webkit-scrollbar-thumb{background:rgba(57,197,187,.3);border-radius:3px}
@@ -95,10 +96,11 @@
     <div class="logo-mark">GT</div>
     <div>
       <div class="logo-text">GundamTrainer AI</div>
-      <div class="logo-sub">MIKU FULL-BODY INTERFACE v1.10</div>
+      <div class="logo-sub">MIKU PROCEDURAL INTERFACE v1.20</div>
     </div>
   </div>
   <div class="status-bar">
+    <span style="font-size:9px; color:var(--dim); margin-right:4px;">ZOOM: [ + ] [ - ] KEY</span>
     <div class="dot"></div>
     <span id="st">INITIALIZING</span>
   </div>
@@ -109,14 +111,14 @@
     <div class="corner bl"></div><div class="corner br"></div>
     <div id="loading">
       <div class="ring"></div>
-      <div class="lt">LOADING MIKU SYSTEM</div>
+      <div class="lt">GENERATING 100-MOTION MATRIX</div>
       <div id="prog">준비 중...</div>
     </div>
   </div>
   <div id="panel">
     <div class="ph"><div class="dot"></div><div class="pt">DIALOGUE SYSTEM</div></div>
     <div id="msgs">
-      <div class="msg m"><div class="ml">MIKU</div><div class="mb">오징어 모션 탈출 완료! 지상에 발을 단단히 붙이고 마주할게. 무슨 얘기든 들려줘 🎵</div></div>
+      <div class="msg m"><div class="ml">MIKU</div><div class="mb">시스템 업그레이드 완료! 이제 100가지의 정밀한 행동 루틴을 유기적으로 구사할 수 있어. 키보드의 +와 - 버튼으로 확대/축소도 지원해 🎵</div></div>
     </div>
     <div id="ctrl">
       <div id="aks">
@@ -126,7 +128,19 @@
           <button class="btn" id="aksv" onclick="saveKey()">SAVE</button>
         </div>
       </div>
-      <div id="ed"><div id="el">CURRENT EMOTION</div><div id="ev">😊 HAPPY</div></div>
+      
+      <!-- 감정 및 100대 액션 인디케이터 분리 디스플레이 -->
+      <div id="ed">
+        <div class="ed-row">
+          <div class="ed-lbl">CURRENT EMOTION</div>
+          <div class="ed-val" id="emotion-val">😊 HAPPY</div>
+        </div>
+        <div class="ed-row" style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(57,197,187,0.08);">
+          <div class="ed-lbl">ACT ENGINE (1-100)</div>
+          <div class="ed-val" id="action-val">🧍 IDLE_01</div>
+        </div>
+      </div>
+
       <div id="msr">
         <button class="mb3 active" id="bb" onclick="switchModel('Black')">BLACK ver.</button>
         <button class="mb3" id="wb" onclick="switchModel('White')">WHITE ver.</button>
@@ -168,7 +182,34 @@ let speaking=false, listening=false, recog=null, animId=null;
 let lipT=0, lipTarget=0;
 let audioCtx=null, analyser=null, micStream=null, volAnimId=null;
 let curEmotion='happy';
-let curAction='idle'; 
+
+// 100가지 마스터 모션 데이터 엔진 구조 정의
+const ACTIONS = [];
+function generate100Actions() {
+  // 1 ~ 20: Idle & Thinking 바리에이션
+  for(let i=1; i<=20; i++) {
+    ACTIONS.push({ id: i, type: 'idle', name: `IDLE_THINK_${String(i).padStart(2,'0')}`, amp: 0.01 + (i*0.002), freq: 1.0 + (i*0.05) });
+  }
+  // 21 ~ 45: Talking & Explanation 바리에이션
+  for(let i=21; i<=45; i++) {
+    ACTIONS.push({ id: i, type: 'talking', name: `TALK_EXPLAIN_${String(i-20).padStart(2,'0')}`, amp: 0.08 + (i*0.003), freq: 1.8 + (i*0.04) });
+  }
+  // 46 ~ 60: Greeting & High Waves (팔 올리기 포함) 바리에이션
+  for(let i=46; i<=60; i++) {
+    ACTIONS.push({ id: i, type: 'greeting', name: `HI_WAVE_HIGH_${String(i-45).padStart(2,'0')}`, amp: 0.15, freq: 2.5 + (i*0.1) });
+  }
+  // 61 ~ 85: Cheer & Danced Rhythm 바리에이션
+  for(let i=61; i<=85; i++) {
+    ACTIONS.push({ id: i, type: 'dance', name: `IDOL_DANCE_${String(i-60).padStart(2,'0')}`, amp: 0.2, freq: 3.2 + (i*0.05) });
+  }
+  // 86 ~ 100: Squat & Crouch (다리 구부리기) 바리에이션
+  for(let i=86; i<=100; i++) {
+    ACTIONS.push({ id: i, type: 'squat', name: `SQUAT_CROUCH_${String(i-85).padStart(2,'0')}`, amp: 0.05, freq: 1.2 });
+  }
+}
+generate100Actions();
+
+let activeAction = ACTIONS[0]; // 초기 상태: 1번 액션
 
 const mouse = new THREE.Vector2();
 const targetMouse = new THREE.Vector2();
@@ -218,6 +259,21 @@ function init3D(){
   controls.maxDistance = 60;
   
   clock=new THREE.Clock();
+  
+  // 키보드 핫키 카메라 줌인/줌아웃 인터페이스 탑재
+  window.addEventListener('keydown', (e) => {
+    if(!controls) return;
+    const dir = new THREE.Vector3();
+    cam.getWorldDirection(dir);
+    
+    if (e.key === '+' || e.key === '=') { // 플러스를 누르거나 쉬프트 없는 이퀄 대응
+      cam.position.addScaledVector(dir, 0.6); // 줌인
+      controls.update();
+    } else if (e.key === '-') {
+      cam.position.addScaledVector(dir, -0.6); // 줌아웃
+      controls.update();
+    }
+  });
   
   c.addEventListener('mousemove', (e) => {
     const rect = c.getBoundingClientRect();
@@ -287,10 +343,9 @@ function startLoop(){
     mouse.x += (targetMouse.x - mouse.x) * 0.08;
     mouse.y += (targetMouse.y - mouse.y) * 0.08;
     
-    // 시선 무작위 분산 처리
     randomLookTimer += 0.016;
     if(randomLookTimer > 4.0) {
-      if(!isMouseOverCanvas && curAction === 'idle') {
+      if(!isMouseOverCanvas && activeAction.type === 'idle') {
         targetLookX = (Math.random() - 0.5) * 0.15;
         targetLookY = (Math.random() - 0.5) * 0.08;
       } else {
@@ -302,10 +357,12 @@ function startLoop(){
     curLookY += (targetLookY - curLookY) * 0.05;
     
     if(mesh){
-      // 생동감 레이어 기본 주파수
-      const breathe = Math.sin(t * 1.6);         // 호흡 주기
-      const breatheFast = Math.sin(t * 4.2);     // 신날 때 리듬 주기
-      const weightShift = Math.sin(t * 0.35);    // 지상 체중 이동 주기
+      // 각 번호별 시드 가중치를 부여해 유니크한 파형 공식 연산 적용
+      const actId = activeAction.id;
+      const seed = Math.sin(actId * 45.3); 
+      
+      const breathe = Math.sin(t * activeAction.freq);
+      const waveSub = Math.cos(t * (activeAction.freq * 0.7) + seed);
       
       // 립싱크 제어
       if(speaking){
@@ -336,46 +393,50 @@ function startLoop(){
       else if(bf < 8) setMorph('ままたき', 1 - (bf - 4) / 4);
       else setMorph('まままき', 0);
       
-      // 실시간 본(Bone) 제어부 - 보간(LERP) 연산으로 부드러움 극대화
+      // 100개 본 구조 연산 가동부
       mesh.traverse(child=>{
         if(!child.isBone) return;
         const n = child.name;
         
-        // A. 골반 및 하체 중심축 (오징어 방지: 지면에 완벽 패킹)
+        // A. 하체 및 중심 고정축 (스쿼트 모션 포함 제어)
         if(/下半身|Hips/i.test(n)){
-          let targetPosX = weightShift * 0.015; // 미세한 짝다리 무게중심 이동만 허용
-          let targetPosY = (breathe * 0.004) - (curAction === 'sad' ? 0.015 : 0);
-          let targetRotZ = weightShift * 0.015;
-          let targetRotY = weightShift * 0.02;
+          let targetPosY = breathe * 0.003;
+          let targetPosX = waveSub * 0.01;
           
-          child.position.x += (targetPosX - child.position.x) * 0.1;
+          // 86~100번 스쿼트/다리 구부리기 동작 시 중심축 낙하 스케일 계산
+          if(activeAction.type === 'squat') {
+            const squatDepth = 0.12 + (actId - 86) * 0.012; // 뒤 번호로 갈수록 더 깊게 앉음
+            targetPosY = -squatDepth + (breathe * 0.005);
+          }
+          
           child.position.y += (targetPosY - child.position.y) * 0.1;
-          child.rotation.z += (targetRotZ - child.rotation.z) * 0.1;
-          child.rotation.y += (targetRotY - child.rotation.y) * 0.1;
+          child.position.x += (targetPosX - child.position.x) * 0.1;
           return;
         }
         if(/센터|Center/i.test(n)){
-          child.position.set(0, 0, 0); // 센터 고정
+          child.position.set(0, 0, 0);
           return;
         }
         
-        // B. 척추 및 허리 (액션별 분기 처리)
+        // B. 척추 및 상체 굴곡 레이어
         if(/上半身|[S|s]pine/i.test(n)){
-          let tx = 0.02, ty = 0, tz = 0;
-          if(curAction === 'talking') {
-            tx = 0.04 + (breathe * 0.015) + Math.sin(t * 2.5) * 0.015;
-            ty = Math.cos(t * 1.6) * 0.03;
-            tz = Math.sin(t * 1.1) * 0.015;
-          } else if(curAction === 'greeting') {
-            tx = 0.06; ty = 0.02;
-          } else if(curAction === 'cheer') {
-            tx = -0.01 + breatheFast * 0.02;
-            ty = Math.sin(t * 3.5) * 0.02;
-          } else if(curAction === 'sad') {
-            tx = 0.09 + breathe * 0.008; // 의기소침 구조
+          let tx = 0.03, ty = 0, tz = 0;
+          
+          if(activeAction.type === 'talking') {
+            tx = 0.04 + (breathe * activeAction.amp) + (seed * 0.02);
+            ty = waveSub * 0.04;
+          } else if(activeAction.type === 'greeting') {
+            tx = 0.05 + (seed * 0.01);
+            ty = 0.03 + (waveSub * 0.02);
+          } else if(activeAction.type === 'dance') {
+            tx = -0.02 + (breathe * activeAction.amp * 0.3);
+            ty = Math.sin(t * 4.0) * 0.08;
+            tz = Math.cos(t * 3.0) * 0.04;
+          } else if(activeAction.type === 'squat') {
+            tx = 0.08 + (seed * 0.03); // 무릎 굽힐 때 상체를 약간 앞으로 숙임
           } else { // idle
-            tx = 0.03 + (breathe * 0.012);
-            ty = weightShift * 0.015;
+            tx = 0.03 + (breathe * 0.01);
+            ty = waveSub * 0.015;
           }
           child.rotation.x += (tx - child.rotation.x) * 0.1;
           child.rotation.y += (ty - child.rotation.y) * 0.1;
@@ -383,23 +444,22 @@ function startLoop(){
           return;
         }
         
-        // C. 목 및 머리 (말할 때 자연스러운 고개 끄덕임 동기화)
+        // C. 머리 구조체
         if(/頭|[Hh]ead/.test(n)){
           let tx = 0, ty = 0, tz = 0;
-          if(curAction === 'talking') {
-            ty = Math.sin(t * 1.4) * 0.04 + curLookX;
-            tx = 0.04 + Math.abs(Math.sin(t * 2.8)) * 0.05 + curLookY; // 어휘 강조 피칭
-          } else if(curAction === 'greeting') {
-            tx = 0.06; ty = 0.08; tz = -0.03;
-          } else if(curAction === 'cheer') {
-            tx = -0.04 + Math.sin(t * 5.0) * 0.03;
-          } else if(curAction === 'sad') {
-            tx = 0.12; ty = -0.06; 
-          } else { // idle
+          if(activeAction.type === 'talking') {
+            ty = waveSub * 0.05 + curLookX;
+            tx = 0.04 + Math.abs(breathe) * 0.06 + curLookY;
+          } else if(activeAction.type === 'greeting') {
+            tx = 0.05; ty = 0.04 + (seed * 0.03);
+          } else if(activeAction.type === 'dance') {
+            tx = breathe * 0.04;
+            tz = Math.sin(t * 3.5) * 0.03;
+          } else {
             if(isMouseOverCanvas) {
               ty = mouse.x * 0.35; tx = -mouse.y * 0.18;
             } else {
-              ty = weightShift * 0.04 + curLookX; tx = breathe * 0.01 + curLookY;
+              ty = waveSub * 0.04 + curLookX; tx = breathe * 0.01 + curLookY;
             }
           }
           child.rotation.x += (tx - child.rotation.x) * 0.12;
@@ -408,20 +468,29 @@ function startLoop(){
           return;
         }
         
-        // D. 양팔 제스처 레이어 (상황 매칭형 가동구조)
+        // D. 무한 확장을 위한 좌측/우측 팔 가동 각도 계산 (절차적 결합 방식)
         if(/左腕|[Ll]eft.*[Aa]rm/.test(n)) {
-          let tx = -0.15, ty = 0.15, tz = -0.3; // 완벽 보정된 기본 정렬 체계
-          if(curAction === 'greeting') {
-            tx = -1.1; ty = 0.3; tz = -0.9 + Math.sin(t * 5.5) * 0.2; // 인사 손흔들기
-          } else if(curAction === 'talking') {
-            tx = -0.35 + Math.sin(t * 2.0) * 0.12;
-            ty = 0.25 + Math.cos(t * 1.4) * 0.08;
-            tz = -0.45 + Math.sin(t * 1.6) * 0.1;
-          } else if(curAction === 'cheer') {
-            tx = -1.3; ty = 0.15; tz = -1.1 + breatheFast * 0.12;
-          } else if(curAction === 'sad') {
-            tx = -0.08; ty = 0.05; tz = -0.15;
+          let tx = -0.15, ty = 0.15, tz = -0.3; // 기본 정렬
+          
+          if(activeAction.type === 'greeting') {
+            // 46~60번: 하이 웨이브 바리에이션 (번 갈아가며 팔 위로 들어 흔들기 포함)
+            const heightFactor = -1.0 - ((actId - 46) * 0.04); 
+            tx = heightFactor; 
+            ty = 0.2 + (seed * 0.1); 
+            tz = -1.0 + (breathe * activeAction.amp * 4.0);
+          } else if(activeAction.type === 'talking') {
+            tx = -0.35 + (waveSub * activeAction.amp);
+            ty = 0.25 + (seed * 0.05);
+            tz = -0.45 + (breathe * 0.15);
+          } else if(activeAction.type === 'dance') {
+            // 61~85번: 아이돌 댄스 리듬 레이어 (위아래 좌우 다채로운 가동 구조)
+            tx = -0.8 + Math.sin(t * 3.0 + actId) * 0.5;
+            ty = 0.4 + Math.cos(t * 2.0) * 0.3;
+            tz = -0.7 + Math.sin(t * 4.0) * 0.4;
+          } else if(activeAction.type === 'squat') {
+            tx = -0.2; ty = 0.1; tz = -0.25; // 차분히 모으는 스탠스
           }
+          
           child.rotation.x += (tx - child.rotation.x) * 0.1;
           child.rotation.y += (ty - child.rotation.y) * 0.1;
           child.rotation.z += (tz - child.rotation.z) * 0.1;
@@ -429,15 +498,26 @@ function startLoop(){
         }
         if(/右腕|[Rr]ight.*[Aa]rm/.test(n)) {
           let tx = -0.15, ty = -0.15, tz = 0.3;
-          if(curAction === 'talking') {
-            tx = -0.35 + Math.cos(t * 1.8) * 0.12;
-            ty = -0.25 + Math.sin(t * 1.3) * 0.08;
-            tz = 0.45 + Math.cos(t * 1.9) * 0.1;
-          } else if(curAction === 'cheer') {
-            tx = -1.3; ty = -0.15; tz = 1.1 - breatheFast * 0.12;
-          } else if(curAction === 'greeting' || curAction === 'sad') {
-            tx = -0.1; ty = -0.08; tz = 0.2;
+          
+          if(activeAction.type === 'greeting') {
+            // 양손 교차 혹은 역대칭 구도 정렬을 위해 시드 변칙 배합
+            if(actId % 2 === 0) {
+              tx = -1.2; ty = -0.2; tz = 1.0 + (waveSub * 0.5);
+            } else {
+              tx = -0.15; ty = -0.15; tz = 0.3;
+            }
+          } else if(activeAction.type === 'talking') {
+            tx = -0.35 + (breathe * activeAction.amp);
+            ty = -0.25 + (seed * 0.05);
+            tz = 0.45 + (waveSub * 0.15);
+          } else if(activeAction.type === 'dance') {
+            tx = -0.8 + Math.cos(t * 3.0 + actId) * 0.5;
+            ty = -0.4 + Math.sin(t * 2.0) * 0.3;
+            tz = 0.7 + Math.cos(t * 4.0) * 0.4;
+          } else if(activeAction.type === 'squat') {
+            tx = -0.2; ty = -0.1; tz = 0.25;
           }
+          
           child.rotation.x += (tx - child.rotation.x) * 0.1;
           child.rotation.y += (ty - child.rotation.y) * 0.1;
           child.rotation.z += (tz - child.rotation.z) * 0.1;
@@ -446,42 +526,62 @@ function startLoop(){
         
         if(/左ひじ|[Ll]eft.*[Ee]lbow/.test(n)) {
           let tz = -0.15;
-          if(curAction === 'greeting') tz = -0.7;
-          else if(curAction === 'talking') tz = -0.55 + Math.sin(t * 2.2) * 0.15;
-          else if(curAction === 'cheer') tz = -0.9;
+          if(activeAction.type === 'greeting') tz = -0.8 + (waveSub * 0.2);
+          else if(activeAction.type === 'talking') tz = -0.55 + (breathe * 0.2);
+          else if(activeAction.type === 'dance') tz = -0.9 + Math.sin(t * 5.0) * 0.3;
           child.rotation.z += (tz - child.rotation.z) * 0.1;
           return;
         }
         if(/右ひじ|[Rr]ight.*[Ee]lbow/.test(n)) {
           let tz = 0.15;
-          if(curAction === 'talking') tz = 0.55 + Math.cos(t * 2.0) * 0.15;
-          else if(curAction === 'cheer') tz = 0.9;
+          if(activeAction.type === 'talking') tz = 0.55 + (waveSub * 0.2);
+          else if(activeAction.type === 'dance') tz = 0.9 + Math.cos(t * 5.0) * 0.3;
           child.rotation.z += (tz - child.rotation.z) * 0.1;
           return;
         }
         
-        // E. 하체 / 다리 (오징어 방지: 관절 가동 각도를 최소화하여 대지 접지 유도)
+        // E. 하체 접지 및 무릎 제어 가동 구조 (스쿼트 최적화 구조)
         if(/左足$/i.test(n) || /LeftLeg/i.test(n)) {
           let tx = 0, tz = -0.03;
-          if(curAction === 'sad') tx = 0.04;
+          if(activeAction.type === 'squat') {
+            const angle = 0.15 + (actId - 86) * 0.015;
+            tx = angle; tz = -0.05; // 스쿼트 보정 각도
+          } else if(activeAction.type === 'dance') {
+            tx = Math.sin(t * 4.0) * 0.05;
+          }
           child.rotation.x += (tx - child.rotation.x) * 0.1;
           child.rotation.z += (tz - child.rotation.z) * 0.1;
           return;
         }
         if(/右足$/i.test(n) || /RightLeg/i.test(n)) {
           let tx = 0, tz = 0.03;
-          if(curAction === 'sad') tx = 0.04;
+          if(activeAction.type === 'squat') {
+            const angle = 0.15 + (actId - 86) * 0.015;
+            tx = angle; tz = 0.05;
+          } else if(activeAction.type === 'dance') {
+            tx = Math.cos(t * 4.0) * 0.05;
+          }
           child.rotation.x += (tx - child.rotation.x) * 0.1;
           child.rotation.z += (tz - child.rotation.z) * 0.1;
           return;
         }
         if(/左ひざ/i.test(n) || /LeftKnee/i.test(n)) {
-          let tx = curAction === 'sad' ? 0.08 : 0.01;
+          let tx = 0.01;
+          if(activeAction.type === 'squat') {
+            tx = 0.35 + (actId - 86) * 0.03; // 역방향 꺾임 방지 정밀 매칭
+          } else if(activeAction.type === 'dance') {
+            tx = Math.max(0.01, Math.sin(t * 4.0) * 0.1);
+          }
           child.rotation.x += (tx - child.rotation.x) * 0.1;
           return;
         }
         if(/右ひざ/i.test(n) || /RightKnee/i.test(n)) {
-          let tx = curAction === 'sad' ? 0.08 : 0.01;
+          let tx = 0.01;
+          if(activeAction.type === 'squat') {
+            tx = 0.35 + (actId - 86) * 0.03;
+          } else if(activeAction.type === 'dance') {
+            tx = Math.max(0.01, Math.cos(t * 4.0) * 0.1);
+          }
           child.rotation.x += (tx - child.rotation.x) * 0.1;
           return;
         }
@@ -504,18 +604,37 @@ function setMorph(name,val){
 function applyEmotion(key){
   const e=EMOTIONS[key]||EMOTIONS.neutral;
   curEmotion=key;
-  document.getElementById('ev').textContent=`${e.e} ${key.toUpperCase()}`;
+  document.getElementById('emotion-val').textContent=`${e.e} ${key.toUpperCase()}`;
   ALL_EXPR.forEach(m=>setMorph(m,0));
   Object.entries(e.m).forEach(([m,v])=>setMorph(m,v));
 }
 
-// 질문 내용 및 텍스트 문맥 기반 액션 분석기 고도화
+// 100가지 액션 룰 스케줄러 알고리즘
+function selectFromMatrix(type) {
+  const filtered = ACTIONS.filter(a => a.type === type);
+  if(filtered.length === 0) return ACTIONS[0];
+  const randIdx = Math.floor(Math.random() * filtered.length);
+  return filtered[randIdx];
+}
+
 function determineAction(text, emotion) {
   const t = text.toLowerCase();
-  if (t.includes('안녕') || t.includes('반가워') || t.includes('하이') || t.includes('인사')) return 'greeting';
-  if (emotion === 'surprised' || emotion === 'angry' || t.includes('대박') || t.includes('최고') || t.includes('우와')) return 'cheer';
-  if (emotion === 'sad' || t.includes('미안') || t.includes('어렵')) return 'sad';
-  return 'talking';
+  
+  // 특정 명령 키워드 매핑 매칭 구조
+  if (t.includes('춤') || t.includes('댄스')) return selectFromMatrix('dance');
+  if (t.includes('앉아') || t.includes('스쿼트') || t.includes('구부려')) return selectFromMatrix('squat');
+  if (t.includes('안녕') || t.includes('반가워') || t.includes('하이') || t.includes('인사')) return selectFromMatrix('greeting');
+  
+  // 감정 연계형 풀 분기
+  if (emotion === 'surprised' || emotion === 'happy' || t.includes('대박') || t.includes('최고')) {
+    // 확률적으로 댄스 모션 혹은 대화 모션 분기
+    return Math.random() > 0.4 ? selectFromMatrix('dance') : selectFromMatrix('talking');
+  }
+  if (emotion === 'sad' || t.includes('미안') || t.includes('어렵')) {
+    return selectFromMatrix('squat'); // 풀 죽어 앉는 연출 연계
+  }
+  
+  return selectFromMatrix('talking');
 }
 
 function fallback(){
@@ -610,8 +729,9 @@ async function gemini(text){
       rep=rep.replace(/\[EMOTION:\w+\]/g,'').trim();
     }
     
-    // 분석된 감정과 텍스트 기반 액션 최종 확정
-    curAction = determineAction(text, curEmotion);
+    // 분석 결과를 바탕으로 100가지 액션 중 최적화 타겟 지정 및 UI 업데이트
+    activeAction = determineAction(text, curEmotion);
+    document.getElementById('action-val').textContent = `🎭 [${activeAction.id}/100] ${activeAction.name}`;
     
     let jaSpeech = '';
     const jm = rep.match(/\[JA_TTS:\s*(.*?)\s*\]/);
@@ -676,118 +796,103 @@ function speak(text, isJapanese=true){
     };
     u.onend=()=>{
       speaking=false;
-      curAction='idle'; // 발화 종료 시 대기 자세로 복귀
-      VOWELS.forEach(m=>setMorph(m,0));
+      // 발화가 완전히 종료되면 차분한 랜덤 대기 모션(1~20번 중 무작위)으로 자동 복귀
+      activeAction = selectFromMatrix('idle');
+      document.getElementById('action-val').textContent = `🧍 [${activeAction.id}/100] ${activeAction.name}`;
     };
-    u.onerror=()=>{
+    u.onerror=(e)=>{
+      console.error(e);
       speaking=false;
-      curAction='idle';
+      activeAction = selectFromMatrix('idle');
+      document.getElementById('action-val').textContent = `🧍 [${activeAction.id}/100] ${activeAction.name}`;
     };
     
     speechSynthesis.speak(u);
-  }, 40);
+  }, 100);
 }
 
-async function startVolViz(){
-  try{
-    audioCtx=new AudioContext();
-    micStream=await navigator.mediaDevices.getUserMedia({audio:true});
-    const src=audioCtx.createMediaStreamSource(micStream);
-    analyser=audioCtx.createAnalyser();
-    analyser.fftSize=256;
-    src.connect(analyser);
-    const buf=new Uint8Array(analyser.frequencyBinCount);
-    const bars=document.querySelectorAll('.vb');
-    const wrap=document.getElementById('vol-wrap');
-    const volText=document.getElementById('vol-text');
-    wrap.classList.add('active');
-    const draw=()=>{
-      volAnimId=requestAnimationFrame(draw);
-      analyser.getByteFrequencyData(buf);
-      const step=Math.floor(buf.length/12);
-      let total=0;
-      bars.forEach((bar,i)=>{
-        const val=buf[i*step]||0;
-        total+=val;
-        const h=Math.max(2,val/255*24);
-        bar.style.height=h+'px';
-        const g=Math.floor(val/255*100);
-        bar.style.background=`rgb(${57+g},${197-g*0.5},${187-g})`;
-      });
-      const avg=Math.round(total/12/255*100);
-      volText.textContent=avg+'%';
-    };
-    draw();
-  }catch(e){console.warn('마이크 디바이스 접근 불가:',e)}
-}
-function stopVolViz(){
-  if(volAnimId)cancelAnimationFrame(volAnimId);
-  if(micStream)micStream.getTracks().forEach(t=>t.stop());
-  if(audioCtx)audioCtx.close();
-  audioCtx=null;analyser=null;micStream=null;
-  document.getElementById('vol-wrap').classList.remove('active');
-  document.querySelectorAll('.vb').forEach(b=>{b.style.height='2px';});
-  document.getElementById('vol-text').textContent='0%';
+function updateVolumeBars(){
+  if(!analyser || !listening) return;
+  const dataArray = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(dataArray);
+  
+  let sum = 0;
+  for(let i=0; i<dataArray.length; i++) sum += dataArray[i];
+  let avg = sum / dataArray.length;
+  
+  let pct = Math.min(100, Math.floor((avg / 128) * 100));
+  document.getElementById('vol-text').textContent = pct + '%';
+  
+  for(let i=0; i<12; i++){
+    const b = document.getElementById(`vb${i}`);
+    let targetH = Math.max(2, Math.min(28, (dataArray[i*2] || 0) / 255 * 28));
+    b.style.height = targetH + 'px';
+  }
+  volAnimId = requestAnimationFrame(updateVolumeBars);
 }
 
 window.toggleMic=async function(){
-  if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){
-    alert('STT 오디오 엔진 구동을 위해 Chrome 브라우저를 활용바랍니다.');return;
-  }
+  const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!Speech){alert('이 브라우저는 음성 인식을 지원하지 않습니다.');return;}
+  
+  const b=document.getElementById('mb2');
+  const h=document.getElementById('mh');
+  const vw=document.getElementById('vol-wrap');
+  
   if(listening){
-    recog?.stop();
-    stopVolViz();
+    if(recog)recog.stop();
+    listening=false;
+    b.classList.remove('on');
+    b.textContent='🎤 마이크로 말하기';
+    h.textContent='클릭하면 음성인식 시작';
+    vw.classList.remove('active');
+    if(volAnimId) cancelAnimationFrame(volAnimId);
+    if(micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
     return;
   }
-  await startVolViz();
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  recog=new SR();
-  recog.lang='ko-KR';
-  recog.interimResults=true;
-  recog.continuous=false;
-  recog.maxAlternatives=2;
-  const btn=document.getElementById('mb2'),hint=document.getElementById('mh');
-  recog.onstart=()=>{
+  
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(micStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 64;
+    source.connect(analyser);
+    
     listening=true;
-    btn.classList.add('on');
-    btn.textContent='🔴 실시간 오디오 감지 중...';
-    hint.textContent='음성 입력 완료 시 시스템 자동 제출';
-  };
-  recog.onresult=e=>{
-    let best='';
-    for(let i=e.resultIndex;i<e.results.length;i++){
-      if(e.results[i][0].transcript.length>best.length){
-        best=e.results[i][0].transcript;
-      }
-    }
-    document.getElementById('ti').value=best;
-  };
-  recog.onend=()=>{
-    listening=false;
-    btn.classList.remove('on');
-    btn.textContent='🎤 마이크로 말하기';
-    hint.textContent='클릭하면 음성인식 시작';
-    stopVolViz();
-    const v=document.getElementById('ti').value.trim();
-    if(v)window.send(v);
-  };
-  recog.onerror=e=>{
-    listening=false;
-    btn.classList.remove('on');
-    btn.textContent='🎤 마이크로 말하기';
-    stopVolViz();
-    if(e.error==='not-allowed')hint.textContent='마이크 장치 접근 권한 거부됨';
-    else hint.textContent='목소리가 차단되었거나 감지 불가 상태입니다.';
-  };
-  recog.start();
+    b.classList.add('on');
+    b.textContent='🛑 인식 중... (말씀하세요)';
+    h.textContent='듣고 있습니다. 완료되면 말을 멈춰주세요.';
+    vw.classList.add('active');
+    updateVolumeBars();
+    
+    recog=new Speech();
+    recog.lang='ko-KR';
+    recog.continuous=false;
+    recog.interimResults=false;
+    
+    recog.onresult=(e)=>{
+      const t=e.results[0][0].transcript;
+      if(t&&t.trim()) window.send(t);
+    };
+    recog.onend=()=>{
+      if(listening) window.toggleMic();
+    };
+    recog.onerror=(err)=>{
+      console.error(err);
+      if(listening) window.toggleMic();
+    };
+    recog.start();
+  } catch(e) {
+    alert('마이크 오디오 장치 접근 권한이 없거나 에러가 발생했습니다.');
+    console.error(e);
+  }
 };
 
-init3D();
-loadMiku();
-if(speechSynthesis){
-  speechSynthesis.getVoices();
-  speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();
-}
+window.addEventListener('DOMContentLoaded',()=>{
+  init3D();
+  loadMiku();
+});
 </script>
 </body>
 </html>
