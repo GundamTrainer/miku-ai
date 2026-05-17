@@ -95,7 +95,7 @@
     <div class="logo-mark">GT</div>
     <div>
       <div class="logo-text">GundamTrainer AI</div>
-      <div class="logo-sub">MIKU INTERFACE v1.03</div>
+      <div class="logo-sub">MIKU INTERFACE v1.04</div>
     </div>
   </div>
   <div class="status-bar">
@@ -172,12 +172,12 @@ let curEmotion='happy';
 let curAction='idle';
 let actionTimer=0;
 
-// 마우스 위치 추적용 변수 (시선 연동)
+// 마우스 트래킹 
 const mouse = new THREE.Vector2();
 const targetMouse = new THREE.Vector2();
 let isMouseOverCanvas = false;
 
-// 인간적인 대기 상태를 위한 변수들
+// 인간형 절차적 대기 변수 고도화화
 let idleWeightTimer = 0;
 let randomLookTimer = 0;
 let targetLookX = 0, targetLookY = 0;
@@ -199,15 +199,13 @@ function init3D(){
   scene=new THREE.Scene();
   scene.background=new THREE.Color(0x05080f);
   
-  scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-  const d=new THREE.DirectionalLight(0xffffff, 1.5);
+  scene.add(new THREE.AmbientLight(0xffffff, 1.3));
+  const d=new THREE.DirectionalLight(0xffffff, 1.4);
   d.position.set(0,5,5); scene.add(d);
-  const d2=new THREE.DirectionalLight(0x39c5bb, 0.8);
+  const d2=new THREE.DirectionalLight(0x39c5bb, 0.7);
   d2.position.set(-3,3,2); scene.add(d2);
-  const d3=new THREE.DirectionalLight(0xff69b4, 0.4);
+  const d3=new THREE.DirectionalLight(0xff69b4, 0.3);
   d3.position.set(3,1,-2); scene.add(d3);
-  const d4=new THREE.DirectionalLight(0xffffff, 0.6);
-  d4.position.set(0,-2,3); scene.add(d4);
   
   cam=new THREE.PerspectiveCamera(25,c.clientWidth/c.clientHeight,.1,500);
   
@@ -216,23 +214,23 @@ function init3D(){
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure=0.9;
+  renderer.toneMappingExposure=0.95;
   c.appendChild(renderer.domElement);
   
-  // OrbitControls 줌인/줌아웃 및 shift 패닝 완벽 활성화 조절
+  // OrbitControls 무제한 극대화 줌 기능 교정개정
   controls = new OrbitControls(cam, renderer.domElement);
   controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  controls.enableZoom = true;       // 두 손가락 및 휠 줌인 아웃 활성화
-  controls.enablePan = true;        // Shift + 마우스 드래그로 화면 고정 이동 활성화
+  controls.dampingFactor = 0.04; // 관성이 더 부드럽게 붙도록 조절
+  controls.enableZoom = true;       
+  controls.enablePan = true;        
   controls.panSpeed = 0.8;
-  controls.maxPolarAngle = Math.PI / 2 + 0.1;
-  controls.minDistance = 3;
-  controls.maxDistance = 60;
+  controls.zoomSpeed = 1.4;       // 줌 배율 폭 가속 스피드 향상
+  controls.maxPolarAngle = Math.PI / 2 + 0.15;
+  controls.minDistance = 0.4;     // 눈앞 초근접(익스트림 클로즈업) 한계 해제 극대화
+  controls.maxDistance = 80;
   
   clock=new THREE.Clock();
   
-  // 마우스 이동 이벤트 바인딩 (시선 추적용)
   c.addEventListener('mousemove', (e) => {
     const rect = c.getBoundingClientRect();
     targetMouse.x = ((e.clientX - rect.left) / c.clientWidth) * 2 - 1;
@@ -278,7 +276,7 @@ function loadMiku(){
       const sz=box.getSize(new THREE.Vector3());
       const maxDim=Math.max(sz.x,sz.y,sz.z);
       
-      cam.position.set(cen.x, cen.y + sz.y * 0.4, cen.z + maxDim * 2.8);
+      cam.position.set(cen.x, cen.y + sz.y * 0.4, cen.z + maxDim * 2.6);
       controls.target.set(cen.x, cen.y + sz.y * 0.4, cen.z);
       controls.update();
       
@@ -291,7 +289,7 @@ function loadMiku(){
   );
 }
 
-// ── 전신 관절 절차적 애니메이션 엔진 루프 ──
+// ── 전신 관절 절차적 애니메이션 엔진 루프 (기본포즈 개정판) ──
 function startLoop(){
   if(animId)cancelAnimationFrame(animId);
   const emo=()=>EMOTIONS[curEmotion]||EMOTIONS.neutral;
@@ -303,36 +301,37 @@ function startLoop(){
     
     if(controls) controls.update();
     
-    // 마우스 좌표 보간 (부드러운 움직임 구현)
-    mouse.x += (targetMouse.x - mouse.x) * 0.1;
-    mouse.y += (targetMouse.y - mouse.y) * 0.1;
+    mouse.x += (targetMouse.x - mouse.x) * 0.08;
+    mouse.y += (targetMouse.y - mouse.y) * 0.08;
     
-    // 인간적인 랜덤 시선 타이머
+    // 인간적인 불규칙 시선 이동 타이머
     randomLookTimer += 0.016;
-    if(randomLookTimer > 3.5) {
+    if(randomLookTimer > 4.0) {
       if(!isMouseOverCanvas && !speaking) {
-        targetLookX = (Math.random() - 0.5) * 0.15;
-        targetLookY = (Math.random() - 0.5) * 0.1;
+        targetLookX = (Math.random() - 0.5) * 0.18;
+        targetLookY = (Math.random() - 0.5) * 0.08;
       } else {
         targetLookX = 0; targetLookY = 0;
       }
       randomLookTimer = 0;
     }
-    curLookX += (targetLookX - curLookX) * 0.05;
-    curLookY += (targetLookY - curLookY) * 0.05;
+    curLookX += (targetLookX - curLookX) * 0.04;
+    curLookY += (targetLookY - curLookY) * 0.04;
     
     if(mesh){
-      // 자연스러운 인간의 무게중심 대기 애니메이션 (체중 이동)
-      idleWeightTimer += 0.016 * e.speed;
-      const bodySwayX = Math.sin(idleWeightTimer * 0.5) * 0.02;
-      const bodySwayZ = Math.cos(idleWeightTimer * 0.7) * 0.01;
+      // ── 체중 양다리 이동 결합 루프 계산 ──
+      idleWeightTimer += 0.016 * (e.speed * 1.2);
+      const weightCycle = Math.sin(idleWeightTimer * 0.4); // 좌우 체중이동 주기성
+      const hipShiftX = weightCycle * 0.05;               // 골반 밀림
+      const hipRollZ = weightCycle * 0.025;               // 골반 기울기
+      const breatheCycle = Math.sin(t * 1.8) * 0.015;     // 기본 가슴 호흡 바운스
       
       if(!speaking && curAction === 'talking') {
         curAction = 'idle';
       }
       actionTimer += 0.016;
       
-      // 입 움직임 처리
+      // 입 움직임
       if(speaking){
         lipT+=.25;
         const v=Math.abs(Math.sin(lipT*4))*.7;
@@ -357,60 +356,70 @@ function startLoop(){
         setMorph(v, curLip[i]+(target-curLip[i])*.3);
       });
       
-      // 눈 깜빡임
+      // 깜빡임
       const bf=Math.floor(t*60)%240;
       if(bf<4)setMorph('ままたき',bf/4);
       else if(bf<8)setMorph('ままたき',1-(bf-4)/4);
       else setMorph('ままたき',0);
       
-      // 전신 관절 절차적 본 제어
+      // ── 인간형 뼈 포즈 매트릭스 절차 제어 개편 ──
       mesh.traverse(child=>{
         if(!child.isBone)return;
         const n=child.name;
         
-        // 기본 숨쉬기 및 호버링 레이어 배합
-        if(/센터|Center/.test(n)){
-          child.position.y = Math.sin(t * 1.5) * 0.015;
+        // 골반 및 센터 무게중심 (어정쩡함 원천 제거)
+        if(/下半身|Hips/i.test(n)){
+          child.position.x = hipShiftX;
+          child.rotation.z = hipRollZ;
+          child.rotation.y = -hipShiftX * 0.3;
+          return;
+        }
+        if(/센터|Center/i.test(n)){
+          child.position.y = breatheCycle;
+          return;
         }
         
-        // 1. 목 / 머리 (시선 추적 및 랜덤 대기 포함)
+        // 1. 척추 및 상체 (S자 서 있는 기본자세 배합)
+        if(/上半身|[S|s]pine/i.test(n)){
+          if(curAction === 'cheer') {
+            child.rotation.x = Math.sin(t * 4.0) * 0.05 - 0.05;
+          } else {
+            // 기본 전방 미세 굽힘(0.03) + 호흡 진동 + 체중이동 반대 균형 작용
+            child.rotation.x = 0.03 + Math.sin(t * 1.8) * 0.008;
+            child.rotation.y = -hipShiftX * 0.4;
+            child.rotation.z = -hipRollZ * 0.5;
+          }
+        }
+        
+        // 2. 목 / 머리 (시선 및 마우스 고도화)
         if(/頭|[Hh]ead/.test(n)){
           if(curAction === 'thinking') {
             child.rotation.z = Math.sin(t * 0.5) * 0.08 - 0.05;
             child.rotation.x = 0.05;
           } else if(curAction === 'talking') {
             child.rotation.y = Math.sin(t * 2.5) * 0.06;
-            child.rotation.x = Math.max(0, Math.sin(t * 3.0) * 0.04);
+            child.rotation.x = 0.03 + Math.max(0, Math.sin(t * 3.0) * 0.04);
           } else {
-            // 마우스 오버 상태 시 마우스 바라보기 연동, 미오버 시 랜덤 휴먼 룩 연동
             if(isMouseOverCanvas) {
-              child.rotation.y = mouse.x * 0.35;
-              child.rotation.x = -mouse.y * 0.2;
+              child.rotation.y = mouse.x * 0.42;
+              child.rotation.x = -mouse.y * 0.25;
+              child.rotation.z = mouse.x * 0.05;
             } else {
-              child.rotation.y = Math.sin(t * e.speed * .6) * .03 + curLookX;
-              child.rotation.x = curLookY;
-              child.rotation.z = curEmotion==='sad'?-.05:0;
+              child.rotation.y = Math.sin(t * 0.4) * .03 + curLookX;
+              child.rotation.x = Math.sin(t * 0.15) * 0.01 + curLookY;
+              child.rotation.z = Math.sin(t * 0.6) * 0.01 + (curEmotion==='sad'?-.05:0);
             }
           }
         }
         if(/ネック|首|[Nn]eck/.test(n)){
           if(isMouseOverCanvas && curAction === 'idle') {
             child.rotation.y = mouse.x * 0.15;
-            child.rotation.x = -mouse.y * 0.1;
+            child.rotation.x = -mouse.y * 0.08;
           }
         }
         
-        // 2. 허리 / 상체 (체중이동 결합)
-        if(/上半身|[S|s]pine/.test(n)){
-          if(curAction === 'cheer') {
-            child.rotation.x = Math.sin(t * 4.0) * 0.05 - 0.05;
-          } else {
-            child.rotation.y = Math.sin(t * e.speed) * (e.sway * 0.5) + bodySwayX;
-            child.rotation.x = Math.sin(t * 0.8) * 0.02 + bodySwayZ;
-          }
-        }
-        
-        // 3. 어깨 및 팔 관절 자연스러운 호흡 동기화
+        // 3. 양팔 배치 릴랙스 전면 수정 (T자형 강제 해제)
+        // 기본 툭 떨어뜨린 자세 수치 반영 (-1.1 / 1.1 라디안 적용)
         if(/左腕|[Ll]eft.*[Aa]rm/.test(n)) {
           if(curAction === 'greeting') {
             child.rotation.z = -1.4; 
@@ -419,9 +428,10 @@ function startLoop(){
             child.rotation.z = -2.0 + Math.sin(t * 6.0) * 0.2;
           } else if(curAction === 'thinking') {
             child.rotation.z = -0.4; child.rotation.y = 0.3;
-          } else { // 대기 중 미세하게 흔들림 연출
-            child.rotation.z = Math.sin(t*1.2)*.02 - .08 + bodySwayX*0.2;
-            child.rotation.x = Math.cos(t*0.6)*.02;
+          } else { 
+            child.rotation.z = -1.12 + Math.sin(t * 1.8) * 0.015; // 안쪽으로 정돈
+            child.rotation.x = 0.08 + Math.cos(t * 0.4) * 0.01;
+            child.rotation.y = 0.05;
           }
         }
         if(/右腕|[Rr]ight.*[Aa]rm/.test(n)) {
@@ -430,33 +440,52 @@ function startLoop(){
           } else if(curAction === 'thinking') {
             child.rotation.z = 0.2; child.rotation.x = -0.5;
           } else {
-            child.rotation.z = Math.sin(t*1.2+1)*.02 + .08 - bodySwayX*0.2;
-            child.rotation.x = -Math.cos(t*0.6)*.02;
+            child.rotation.z = 1.12 - Math.sin(t * 1.8) * 0.015;  // 안쪽으로 정돈
+            child.rotation.x = 0.08 - Math.cos(t * 0.4) * 0.01;
+            child.rotation.y = -0.05;
           }
         }
-        
-        // 팔꿈치 관절
         if(/左ひじ|[Ll]eft.*[Ee]lbow/.test(n)) {
           if(curAction === 'thinking') child.rotation.z = -1.2;
           else if(curAction === 'cheer') child.rotation.z = -0.5;
-          else child.rotation.z = -0.15 + Math.sin(t * 1.2) * 0.03;
+          else child.rotation.x = 0.18 + Math.sin(t * 1.8) * 0.01; // 약간 앞으로 유연화
         }
         if(/右ひじ|[Rr]ight.*[Ee]lbow/.test(n)) {
           if(curAction === 'thinking') child.rotation.z = 1.4;
           else if(curAction === 'cheer') child.rotation.z = 0.5;
-          else child.rotation.z = 0.15 + Math.sin(t * 1.2) * 0.03;
+          else child.rotation.x = 0.18 - Math.sin(t * 1.8) * 0.01; // 약간 앞으로 유연화
         }
         
-        // 4. 고관절 및 다리 관절 (대기 무게중심 시각화 고도화)
-        if(/左足|[Ll]eft.*[Le]g/.test(n)) {
-          if(curAction === 'cheer') child.rotation.x = -0.1 + Math.sin(t * 4.0) * 0.1;
-          else child.rotation.x = Math.sin(t * 1.2) * 0.01 + bodySwayZ;
-          child.rotation.z = bodySwayX * 0.3;
+        // 4. 하체 및 다리 실시간 움직임 가동 (양다리 교차 연동 레이어)
+        if(/左足$/i.test(n) || /LeftLeg/i.test(n)) { 
+          if(curAction === 'cheer') {
+            child.rotation.x = -0.1 + Math.sin(t * 4.0) * 0.1;
+          } else {
+            // 골반 좌우 이동 시 다리가 바닥을 지탱하거나 힘을 빼며 연동
+            child.rotation.x = 0.02 + Math.max(0, weightCycle) * 0.04;
+            child.rotation.z = -0.04 - hipRollZ * 0.6;
+            child.rotation.y = 0.02;
+          }
         }
-        if(/右足|[Rr]ight.*[Le]g/.test(n)) {
-          if(curAction === 'cheer') child.rotation.x = -0.1 + Math.sin(t * 4.0 + 1) * 0.1;
-          else child.rotation.x = Math.sin(t * 1.2 + 0.5) * 0.01 - bodySwayZ;
-          child.rotation.z = bodySwayX * 0.3;
+        if(/右足$/i.test(n) || /RightLeg/i.test(n)) {
+          if(curAction === 'cheer') {
+            child.rotation.x = -0.1 + Math.sin(t * 4.0 + 1) * 0.1;
+          } else {
+            child.rotation.x = 0.02 + Math.max(0, -weightCycle) * 0.04;
+            child.rotation.z = 0.04 - hipRollZ * 0.6;
+            child.rotation.y = -0.02;
+          }
+        }
+        // 무릎 관절 보간 회전 (체중 실린 쪽 펴짐, 반대쪽 미세 굽힘)
+        if(/左ひざ/i.test(n) || /LeftKnee/i.test(n)) {
+          if(curAction !== 'cheer') {
+            child.rotation.x = 0.06 - Math.max(0, weightCycle) * 0.05;
+          }
+        }
+        if(/右ひざ/i.test(n) || /RightKnee/i.test(n)) {
+          if(curAction !== 'cheer') {
+            child.rotation.x = 0.06 - Math.max(0, -weightCycle) * 0.05;
+          }
         }
       });
     }
@@ -635,16 +664,14 @@ window.send=async function(t){
   }
 };
 
-// ── TTS 음질 및 버퍼 깨짐 해결 안정화 버전 ──
+// ── TTS 음질 복구 피치 하향 패치 버전 ──
 function speak(text, isJapanese=true){
   if(!speechSynthesis)return;
   const clean=cleanForTTS(text);
   if(!clean)return;
   
-  // 이전 큐 완벽 강제 캔슬로 리소스 충돌 방지
   speechSynthesis.cancel();
   
-  // 브라우저의 오디오 컨텍스트 락 상태 및 깨짐 현상을 피하기 위한 비동기 약간의 지연 호출
   setTimeout(() => {
     const u=new SpeechSynthesisUtterance(clean);
     const vs=speechSynthesis.getVoices();
@@ -662,8 +689,9 @@ function speak(text, isJapanese=true){
       u.lang='ko-KR';
     }
     
-    u.pitch=1.55; 
-    u.rate=1.05;
+    // 주파수 찢어짐 현상을 없애기 위해 피치를 안정선(1.28)으로 타협 고정
+    u.pitch=1.28; 
+    u.rate=1.02;
     
     u.onstart=()=>{
       speaking=true;
@@ -682,7 +710,7 @@ function speak(text, isJapanese=true){
     };
     
     speechSynthesis.speak(u);
-  }, 60);
+  }, 50);
 }
 
 // ── 마이크 볼륨 시각화 ──
