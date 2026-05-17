@@ -95,7 +95,7 @@
     <div class="logo-mark">GT</div>
     <div>
       <div class="logo-text">GundamTrainer AI</div>
-      <div class="logo-sub">MIKU FULL-BODY INTERFACE v1.06</div>
+      <div class="logo-sub">MIKU FULL-BODY INTERFACE v1.10</div>
     </div>
   </div>
   <div class="status-bar">
@@ -116,7 +116,7 @@
   <div id="panel">
     <div class="ph"><div class="dot"></div><div class="pt">DIALOGUE SYSTEM</div></div>
     <div id="msgs">
-      <div class="msg m"><div class="ml">MIKU</div><div class="mb">안녕! 팔 방향 링크 정렬 오류를 수정하고 전신 가동력을 고도화했어! 언제든 말 걸어줘 🎵</div></div>
+      <div class="msg m"><div class="ml">MIKU</div><div class="mb">오징어 모션 탈출 완료! 지상에 발을 단단히 붙이고 마주할게. 무슨 얘기든 들려줘 🎵</div></div>
     </div>
     <div id="ctrl">
       <div id="aks">
@@ -168,26 +168,25 @@ let speaking=false, listening=false, recog=null, animId=null;
 let lipT=0, lipTarget=0;
 let audioCtx=null, analyser=null, micStream=null, volAnimId=null;
 let curEmotion='happy';
-let curAction='idle';
+let curAction='idle'; 
 
 const mouse = new THREE.Vector2();
 const targetMouse = new THREE.Vector2();
 let isMouseOverCanvas = false;
 
-let generalTimer = 0;
 let randomLookTimer = 0;
 let targetLookX = 0, targetLookY = 0;
 let curLookX = 0, curLookY = 0;
 
 const EMOTIONS={
-  happy:{e:'😊',m:{'にっこり':.9,'笑い':.4},sway:.06,speed:.4},
-  sad:{e:'😢',m:{'困る':.8,'悲しい':.5},sway:.02,speed:.2},
-  angry:{e:'😠',m:{'怒り':.9},sway:.08,speed:.6},
-  surprised:{e:'😲',m:{'驚기':1.0},sway:.1,speed:.8},
-  neutral:{e:'😐',m:{},sway:.04,speed:.35}
+  happy:{e:'😊',m:{'にっこり':.9,'笑い':.4}},
+  sad:{e:'😢',m:{'困る':.8,'悲しい':.5}},
+  angry:{e:'😠',m:{'怒り':.9}},
+  surprised:{e:'😲',m:{'驚き':1.0}},
+  neutral:{e:'😐',m:{}}
 };
 const VOWELS=['あ','い','う','え','お'];
-const ALL_EXPR=['にっこり','笑い','困る','悲しい','怒り','驚기','ω'];
+const ALL_EXPR=['にっこり','笑い','困る','悲しい','怒り','驚き','ω'];
 
 function init3D(){
   const c=document.getElementById('cv');
@@ -215,9 +214,6 @@ function init3D(){
   controls = new OrbitControls(cam, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
-  controls.enableZoom = true;       
-  controls.enablePan = true;        
-  controls.zoomSpeed = 1.5;       
   controls.minDistance = 0.3;     
   controls.maxDistance = 60;
   
@@ -280,24 +276,23 @@ function loadMiku(){
 
 function startLoop(){
   if(animId)cancelAnimationFrame(animId);
-  const emo=()=>EMOTIONS[curEmotion]||EMOTIONS.neutral;
   
   const loop=()=>{
     animId=requestAnimationFrame(loop);
     const dt = clock.getDelta();
     const t = clock.getElapsedTime();
-    const e = emo();
     
     if(controls) controls.update();
     
     mouse.x += (targetMouse.x - mouse.x) * 0.08;
     mouse.y += (targetMouse.y - mouse.y) * 0.08;
     
+    // 시선 무작위 분산 처리
     randomLookTimer += 0.016;
-    if(randomLookTimer > 3.5) {
-      if(!isMouseOverCanvas && !speaking) {
-        targetLookX = (Math.random() - 0.5) * 0.2;
-        targetLookY = (Math.random() - 0.5) * 0.1;
+    if(randomLookTimer > 4.0) {
+      if(!isMouseOverCanvas && curAction === 'idle') {
+        targetLookX = (Math.random() - 0.5) * 0.15;
+        targetLookY = (Math.random() - 0.5) * 0.08;
       } else {
         targetLookX = 0; targetLookY = 0;
       }
@@ -307,18 +302,12 @@ function startLoop(){
     curLookY += (targetLookY - curLookY) * 0.05;
     
     if(mesh){
-      const walkPhase = t * 2.4; 
-      const sideStepX = Math.sin(walkPhase) * 0.14;       
-      const stepUpDownY = -Math.abs(Math.cos(walkPhase)) * 0.035; 
+      // 생동감 레이어 기본 주파수
+      const breathe = Math.sin(t * 1.6);         // 호흡 주기
+      const breatheFast = Math.sin(t * 4.2);     // 신날 때 리듬 주기
+      const weightShift = Math.sin(t * 0.35);    // 지상 체중 이동 주기
       
-      const crouchPeriod = t % 11;
-      let crouchFactor = 0;
-      if (crouchPeriod > 7.5 && crouchPeriod < 10.5) {
-        crouchFactor = Math.sin((crouchPeriod - 7.5) / 3 * Math.PI); 
-      }
-      
-      let speechAmp = speaking ? 1.0 : 0.0;
-      
+      // 립싱크 제어
       if(speaking){
         lipT += 0.28;
         lipTarget = Math.abs(Math.sin(lipT * 3.8)) * 0.75;
@@ -341,133 +330,159 @@ function startLoop(){
         setMorph(v, curLip[i] + (target - curLip[i]) * 0.35);
       });
       
-      const bf = Math.floor(t * 60) % 200;
+      // 눈 깜빡임
+      const bf = Math.floor(t * 60) % 220;
       if(bf < 4) setMorph('ままたき', bf / 4);
       else if(bf < 8) setMorph('ままたき', 1 - (bf - 4) / 4);
-      else setMorph('ままたき', 0);
+      else setMorph('まままき', 0);
       
+      // 실시간 본(Bone) 제어부 - 보간(LERP) 연산으로 부드러움 극대화
       mesh.traverse(child=>{
         if(!child.isBone) return;
         const n = child.name;
         
-        // A. 무게중심 및 골반
+        // A. 골반 및 하체 중심축 (오징어 방지: 지면에 완벽 패킹)
         if(/下半身|Hips/i.test(n)){
-          child.position.x = (sideStepX * (1 - speechAmp)) + (Math.sin(t * 4.5) * 0.08 * speechAmp);
-          child.position.y = (stepUpDownY * (1 - speechAmp)) - (crouchFactor * 0.42) + (Math.sin(t * 9.0) * 0.02 * speechAmp);
-          child.rotation.z = (Math.cos(walkPhase) * 0.05 * (1 - speechAmp)) + (Math.cos(t * 4.5) * 0.04 * speechAmp);
-          child.rotation.y = (Math.sin(t * 3.5) * 0.14 * speechAmp); 
+          let targetPosX = weightShift * 0.015; // 미세한 짝다리 무게중심 이동만 허용
+          let targetPosY = (breathe * 0.004) - (curAction === 'sad' ? 0.015 : 0);
+          let targetRotZ = weightShift * 0.015;
+          let targetRotY = weightShift * 0.02;
+          
+          child.position.x += (targetPosX - child.position.x) * 0.1;
+          child.position.y += (targetPosY - child.position.y) * 0.1;
+          child.rotation.z += (targetRotZ - child.rotation.z) * 0.1;
+          child.rotation.y += (targetRotY - child.rotation.y) * 0.1;
           return;
         }
         if(/센터|Center/i.test(n)){
-          child.position.y = Math.sin(t * 1.8) * 0.012; 
+          child.position.set(0, 0, 0); // 센터 고정
           return;
         }
         
-        // B. 척추 및 허리
+        // B. 척추 및 허리 (액션별 분기 처리)
         if(/上半身|[S|s]pine/i.test(n)){
-          child.rotation.x = 0.02 + (crouchFactor * 0.18) + (Math.sin(t * 3.0) * 0.06 * speechAmp);
-          child.rotation.y = -(sideStepX * 0.5 * (1 - speechAmp)) + (Math.cos(t * 2.5) * 0.08 * speechAmp);
-          child.rotation.z = -(Math.cos(walkPhase) * 0.03 * (1 - speechAmp)) + (Math.sin(t * 2.0) * 0.04 * speechAmp);
+          let tx = 0.02, ty = 0, tz = 0;
+          if(curAction === 'talking') {
+            tx = 0.04 + (breathe * 0.015) + Math.sin(t * 2.5) * 0.015;
+            ty = Math.cos(t * 1.6) * 0.03;
+            tz = Math.sin(t * 1.1) * 0.015;
+          } else if(curAction === 'greeting') {
+            tx = 0.06; ty = 0.02;
+          } else if(curAction === 'cheer') {
+            tx = -0.01 + breatheFast * 0.02;
+            ty = Math.sin(t * 3.5) * 0.02;
+          } else if(curAction === 'sad') {
+            tx = 0.09 + breathe * 0.008; // 의기소침 구조
+          } else { // idle
+            tx = 0.03 + (breathe * 0.012);
+            ty = weightShift * 0.015;
+          }
+          child.rotation.x += (tx - child.rotation.x) * 0.1;
+          child.rotation.y += (ty - child.rotation.y) * 0.1;
+          child.rotation.z += (tz - child.rotation.z) * 0.1;
           return;
         }
         
-        // C. 목 및 머리
+        // C. 목 및 머리 (말할 때 자연스러운 고개 끄덕임 동기화)
         if(/頭|[Hh]ead/.test(n)){
-          if(speechAmp > 0) {
-            child.rotation.y = Math.sin(t * 2.2) * 0.12 + curLookX;
-            child.rotation.x = 0.02 + Math.sin(t * 4.8) * 0.06 + curLookY;
-            child.rotation.z = Math.cos(t * 2.0) * 0.05;
-          } else {
+          let tx = 0, ty = 0, tz = 0;
+          if(curAction === 'talking') {
+            ty = Math.sin(t * 1.4) * 0.04 + curLookX;
+            tx = 0.04 + Math.abs(Math.sin(t * 2.8)) * 0.05 + curLookY; // 어휘 강조 피칭
+          } else if(curAction === 'greeting') {
+            tx = 0.06; ty = 0.08; tz = -0.03;
+          } else if(curAction === 'cheer') {
+            tx = -0.04 + Math.sin(t * 5.0) * 0.03;
+          } else if(curAction === 'sad') {
+            tx = 0.12; ty = -0.06; 
+          } else { // idle
             if(isMouseOverCanvas) {
-              child.rotation.y = mouse.x * 0.45;
-              child.rotation.x = -mouse.y * 0.22;
+              ty = mouse.x * 0.35; tx = -mouse.y * 0.18;
             } else {
-              child.rotation.y = Math.sin(t * 0.5) * 0.02 + curLookX;
-              child.rotation.x = Math.sin(t * 0.2) * 0.01 + (crouchFactor * 0.06) + curLookY;
+              ty = weightShift * 0.04 + curLookX; tx = breathe * 0.01 + curLookY;
             }
           }
+          child.rotation.x += (tx - child.rotation.x) * 0.12;
+          child.rotation.y += (ty - child.rotation.y) * 0.12;
+          child.rotation.z += (tz - child.rotation.z) * 0.12;
           return;
         }
         
-        // D. 양팔 방향 교정 (Pitch 축을 마이너스로 반전시켜 항상 앞을 보게 설계)
+        // D. 양팔 제스처 레이어 (상황 매칭형 가동구조)
         if(/左腕|[Ll]eft.*[Aa]rm/.test(n)) {
-          if(speechAmp > 0) {
-            child.rotation.z = -0.65 + Math.sin(t * 2.8) * 0.25;
-            child.rotation.x = -0.35 - Math.cos(t * 1.8) * 0.3; // 음수값 적용: 앞을 향함
-            child.rotation.y = 0.3 + Math.sin(t * 1.5) * 0.2;
-          } else {
-            child.rotation.z = -0.45 + (Math.sin(walkPhase) * 0.04) - (crouchFactor * 0.1);
-            child.rotation.x = -0.25 - (Math.cos(t * 0.5) * 0.03); // 음수값 적용: 앞을 향함
-            child.rotation.y = 0.2;
+          let tx = -0.15, ty = 0.15, tz = -0.3; // 완벽 보정된 기본 정렬 체계
+          if(curAction === 'greeting') {
+            tx = -1.1; ty = 0.3; tz = -0.9 + Math.sin(t * 5.5) * 0.2; // 인사 손흔들기
+          } else if(curAction === 'talking') {
+            tx = -0.35 + Math.sin(t * 2.0) * 0.12;
+            ty = 0.25 + Math.cos(t * 1.4) * 0.08;
+            tz = -0.45 + Math.sin(t * 1.6) * 0.1;
+          } else if(curAction === 'cheer') {
+            tx = -1.3; ty = 0.15; tz = -1.1 + breatheFast * 0.12;
+          } else if(curAction === 'sad') {
+            tx = -0.08; ty = 0.05; tz = -0.15;
           }
+          child.rotation.x += (tx - child.rotation.x) * 0.1;
+          child.rotation.y += (ty - child.rotation.y) * 0.1;
+          child.rotation.z += (tz - child.rotation.z) * 0.1;
           return;
         }
         if(/右腕|[Rr]ight.*[Aa]rm/.test(n)) {
-          if(speechAmp > 0) {
-            child.rotation.z = 0.65 + Math.cos(t * 2.6) * 0.25;
-            child.rotation.x = -0.35 - Math.sin(t * 2.2) * 0.3; // 음수값 적용: 앞을 향함
-            child.rotation.y = -0.3 - Math.cos(t * 1.7) * 0.2;
-          } else {
-            child.rotation.z = 0.45 - (Math.sin(walkPhase) * 0.04) + (crouchFactor * 0.1);
-            child.rotation.x = -0.25 + (Math.cos(t * 0.5) * 0.03); // 음수값 적용: 앞을 향함
-            child.rotation.y = -0.2;
+          let tx = -0.15, ty = -0.15, tz = 0.3;
+          if(curAction === 'talking') {
+            tx = -0.35 + Math.cos(t * 1.8) * 0.12;
+            ty = -0.25 + Math.sin(t * 1.3) * 0.08;
+            tz = 0.45 + Math.cos(t * 1.9) * 0.1;
+          } else if(curAction === 'cheer') {
+            tx = -1.3; ty = -0.15; tz = 1.1 - breatheFast * 0.12;
+          } else if(curAction === 'greeting' || curAction === 'sad') {
+            tx = -0.1; ty = -0.08; tz = 0.2;
           }
-          return;
-        }
-        if(/左ひじ|[Ll]eft.*[Ee]lbow/.test(n)) {
-          child.rotation.z = (speechAmp > 0) ? -0.5 + Math.sin(t * 3.2) * 0.4 : -0.25 - (crouchFactor * 0.3);
-          return;
-        }
-        if(/右ひじ|[Rr]ight.*[Ee]lbow/.test(n)) {
-          child.rotation.z = (speechAmp > 0) ? 0.5 + Math.cos(t * 3.0) * 0.4 : 0.25 + (crouchFactor * 0.3);
+          child.rotation.x += (tx - child.rotation.x) * 0.1;
+          child.rotation.y += (ty - child.rotation.y) * 0.1;
+          child.rotation.z += (tz - child.rotation.z) * 0.1;
           return;
         }
         
-        // E. 하체 / 고관절 / 무릎 / 발목
+        if(/左ひじ|[Ll]eft.*[Ee]lbow/.test(n)) {
+          let tz = -0.15;
+          if(curAction === 'greeting') tz = -0.7;
+          else if(curAction === 'talking') tz = -0.55 + Math.sin(t * 2.2) * 0.15;
+          else if(curAction === 'cheer') tz = -0.9;
+          child.rotation.z += (tz - child.rotation.z) * 0.1;
+          return;
+        }
+        if(/右ひじ|[Rr]ight.*[Ee]lbow/.test(n)) {
+          let tz = 0.15;
+          if(curAction === 'talking') tz = 0.55 + Math.cos(t * 2.0) * 0.15;
+          else if(curAction === 'cheer') tz = 0.9;
+          child.rotation.z += (tz - child.rotation.z) * 0.1;
+          return;
+        }
+        
+        // E. 하체 / 다리 (오징어 방지: 관절 가동 각도를 최소화하여 대지 접지 유도)
         if(/左足$/i.test(n) || /LeftLeg/i.test(n)) {
-          if(speechAmp > 0) {
-            child.rotation.x = 0.05 + Math.sin(t * 5.5) * 0.12;
-            child.rotation.z = -0.05 + Math.cos(t * 3.0) * 0.03;
-          } else {
-            child.rotation.x = (Math.sin(walkPhase) * 0.18) + (crouchFactor * 0.32);
-            child.rotation.z = -0.04 - (sideStepX * 0.1);
-          }
+          let tx = 0, tz = -0.03;
+          if(curAction === 'sad') tx = 0.04;
+          child.rotation.x += (tx - child.rotation.x) * 0.1;
+          child.rotation.z += (tz - child.rotation.z) * 0.1;
           return;
         }
         if(/右足$/i.test(n) || /RightLeg/i.test(n)) {
-          if(speechAmp > 0) {
-            child.rotation.x = 0.05 - Math.sin(t * 5.5) * 0.12;
-            child.rotation.z = 0.05 - Math.cos(t * 3.0) * 0.03;
-          } else {
-            child.rotation.x = (-Math.sin(walkPhase) * 0.18) + (crouchFactor * 0.32);
-            child.rotation.z = 0.04 - (sideStepX * 0.1);
-          }
+          let tx = 0, tz = 0.03;
+          if(curAction === 'sad') tx = 0.04;
+          child.rotation.x += (tx - child.rotation.x) * 0.1;
+          child.rotation.z += (tz - child.rotation.z) * 0.1;
           return;
         }
         if(/左ひざ/i.test(n) || /LeftKnee/i.test(n)) {
-          if(speechAmp > 0) {
-            child.rotation.x = 0.1 + Math.max(0, Math.sin(t * 5.5)) * 0.25;
-          } else {
-            child.rotation.x = (Math.max(0, -Math.sin(walkPhase)) * 0.35) + (crouchFactor * 0.65);
-          }
+          let tx = curAction === 'sad' ? 0.08 : 0.01;
+          child.rotation.x += (tx - child.rotation.x) * 0.1;
           return;
         }
         if(/右ひざ/i.test(n) || /RightKnee/i.test(n)) {
-          if(speechAmp > 0) {
-            child.rotation.x = 0.1 + Math.max(0, -Math.sin(t * 5.5)) * 0.25;
-          } else {
-            child.rotation.x = (Math.max(0, Math.sin(walkPhase)) * 0.35) + (crouchFactor * 0.65);
-          }
-          return;
-        }
-        if(/左足首/i.test(n) || /LeftAnkle/i.test(n)) {
-          if(speechAmp > 0) child.rotation.x = Math.sin(t * 5.5) * 0.05;
-          else child.rotation.x = -(crouchFactor * 0.35) - (Math.sin(walkPhase) * 0.05);
-          return;
-        }
-        if(/右足首/i.test(n) || /RightAnkle/i.test(n)) {
-          if(speechAmp > 0) child.rotation.x = -Math.sin(t * 5.5) * 0.05;
-          else child.rotation.x = -(crouchFactor * 0.35) + (Math.sin(walkPhase) * 0.05);
+          let tx = curAction === 'sad' ? 0.08 : 0.01;
+          child.rotation.x += (tx - child.rotation.x) * 0.1;
           return;
         }
       });
@@ -494,9 +509,12 @@ function applyEmotion(key){
   Object.entries(e.m).forEach(([m,v])=>setMorph(m,v));
 }
 
+// 질문 내용 및 텍스트 문맥 기반 액션 분석기 고도화
 function determineAction(text, emotion) {
-  if (text.includes('안녕') || text.includes('반가워')) return 'greeting';
-  if (emotion === 'surprised' || text.includes('가자') || text.includes('최고')) return 'cheer';
+  const t = text.toLowerCase();
+  if (t.includes('안녕') || t.includes('반가워') || t.includes('하이') || t.includes('인사')) return 'greeting';
+  if (emotion === 'surprised' || emotion === 'angry' || t.includes('대박') || t.includes('최고') || t.includes('우와')) return 'cheer';
+  if (emotion === 'sad' || t.includes('미안') || t.includes('어렵')) return 'sad';
   return 'talking';
 }
 
@@ -592,6 +610,7 @@ async function gemini(text){
       rep=rep.replace(/\[EMOTION:\w+\]/g,'').trim();
     }
     
+    // 분석된 감정과 텍스트 기반 액션 최종 확정
     curAction = determineAction(text, curEmotion);
     
     let jaSpeech = '';
@@ -657,10 +676,12 @@ function speak(text, isJapanese=true){
     };
     u.onend=()=>{
       speaking=false;
+      curAction='idle'; // 발화 종료 시 대기 자세로 복귀
       VOWELS.forEach(m=>setMorph(m,0));
     };
     u.onerror=()=>{
       speaking=false;
+      curAction='idle';
     };
     
     speechSynthesis.speak(u);
