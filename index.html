@@ -9,195 +9,202 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #1a1a1a;
+            background-color: #141414;
             color: #fff;
-            font-family: sans-serif;
+            font-family: 'Malgun Gothic', sans-serif;
         }
         #info {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 15px;
-            border-radius: 8px;
+            top: 20px;
+            left: 20px;
+            background: rgba(20, 20, 20, 0.85);
+            padding: 15px 20px;
+            border-radius: 12px;
             font-size: 14px;
             pointer-events: none;
             border: 1px solid #39c5bb;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            line-height: 1.6;
         }
         #behavior-name {
             color: #39c5bb;
             font-weight: bold;
+            font-size: 15px;
         }
     </style>
-    <!-- Three.js 및 OrbitControls 라이브러리 CDN 로드 -->
+    <!-- Three.js 및 OrbitControls 엔진 빌드 로드 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
     <div id="info">
-        <div>하츠네 미쿠 (White Ver.) 모션 테스트</div>
-        <div>현재 행동 패턴: <span id="behavior-name">Initializing...</span></div>
-        <small style="color: #aaa;">3초마다 500가지 행동 중 하나로 무작위 전환됩니다.</small>
+        <div style="font-weight: bold; margin-bottom: 5px; font-size: 16px;">하츠네 미쿠 (White Ver.)</div>
+        <div>실시간 행동 패턴: <span id="behavior-name">데이터 로딩 중...</span></div>
+        <div style="color: #aaa; font-size: 12px; margin-top: 5px;">※ 3초마다 500가지의 유니크한 절차적 모션이 무작위로 활성화됩니다.</div>
     </div>
 
     <script>
-        // --- 1. 기본 씬 설정 (Scene, Camera, Renderer) ---
+        // --- 1. 글로벌 무대 인프라 구축 (Scene, Camera, Renderer) ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x141414);
-        scene.fog = new THREE.FogExp2(0x141414, 0.15);
+        scene.fog = new THREE.FogExp2(0x141414, 0.12);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.set(0, 1.5, 3.5);
+        camera.position.set(0, 1.4, 3.2);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 최적화 가이드라인 적용
         renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         document.body.appendChild(renderer.domElement);
 
-        // 카메라 컨트롤러 (마우스 드래그로 회전, 휠로 줌 가능)
+        // 시점 제어기 설정 (마우스 핸들링 메커니즘)
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.target.set(0, 1, 0);
+        controls.target.set(0, 0.9, 0);
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // 바닥을 뚫고 내려가지 않도록 잠금
 
-        // --- 2. 조명 설정 (Lights) ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // --- 2. 조명 및 환경 설계 (Lights & Stage Ground) ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(5, 10, 7);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+        dirLight.position.set(4, 8, 5);
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.bias = -0.001;
         scene.add(dirLight);
 
-        const floorGeo = new THREE.PlaneGeometry(20, 20);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.8 });
+        // 무대 그림자 리시버 바닥
+        const floorGeo = new THREE.PlaneGeometry(30, 30);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.85 });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         scene.add(floor);
 
-        const grid = new THREE.GridHelper(20, 20, 0x39c5bb, 0x444444);
-        grid.position.y = 0.01;
+        const grid = new THREE.GridHelper(20, 20, 0x39c5bb, 0x333333);
+        grid.position.y = 0.005;
         scene.add(grid);
 
-        // --- 3. 미쿠 모델링 (White Ver. 구조 수정) ---
+        // --- 3. 미쿠 모델링 엔진 (White Ver. 정밀 수리 사양) ---
         function createMikuWhite() {
             const mikuGroup = new THREE.Group();
 
-            // 재질 테마 (White 버전 기반)
-            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
-            const skinMat = new THREE.MeshStandardMaterial({ color: 0xffe0d0, roughness: 0.5 });
-            const hairMat = new THREE.MeshStandardMaterial({ color: 0x39c5bb, roughness: 0.5 });
-            const accentMat = new THREE.MeshStandardMaterial({ color: 0x39c5bb, roughness: 0.3 });
+            // 테마 머티리얼 에셋 정의
+            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35 });
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xffe2d4, roughness: 0.55 });
+            const hairMat = new THREE.MeshStandardMaterial({ color: 0x39c5bb, roughness: 0.45 });
+            const accentMat = new THREE.MeshStandardMaterial({ color: 0x2fa8a0, roughness: 0.4 });
 
-            // 몸통 (Torso) - 모든 관절의 중심점 기준축 역할
-            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.12, 0.5, 16), whiteMat);
-            torso.position.y = 0.85; 
+            // 몸통(Torso) - 계층형 구조의 최상위 루트 노드
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.11, 0.48, 16), whiteMat);
+            torso.position.y = 0.9; 
             torso.castShadow = true;
+            torso.receiveShadow = true;
             mikuGroup.add(torso);
 
-            // 머리 (Head)
-            const headGeo = new THREE.SphereGeometry(0.16, 16, 16);
-            const head = new THREE.Mesh(headGeo, skinMat);
-            head.position.y = 0.38;
+            // 머리(Head)
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), skinMat);
+            head.position.y = 0.36;
             head.castShadow = true;
             torso.add(head);
 
-            // 미쿠 트윈테일 머리카락 (좌/우)
+            // 시그니처 트윈테일 (좌/우 피벗 분리 분기)
             const hairLeftPivot = new THREE.Group();
-            hairLeftPivot.position.set(-0.14, 0.08, -0.05);
+            hairLeftPivot.position.set(-0.13, 0.06, -0.04);
             head.add(hairLeftPivot);
-            const hairLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.01, 0.6, 8), hairMat);
-            hairLeft.position.y = -0.28;
-            hairLeft.rotation.z = Math.PI / 12;
+            const hairLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.008, 0.58, 8), hairMat);
+            hairLeft.position.y = -0.26;
+            hairLeft.rotation.z = Math.PI / 10;
             hairLeftPivot.add(hairLeft);
 
             const hairRightPivot = new THREE.Group();
-            hairRightPivot.position.set(0.14, 0.08, -0.05);
+            hairRightPivot.position.set(0.13, 0.06, -0.04);
             head.add(hairRightPivot);
-            const hairRight = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.01, 0.6, 8), hairMat);
-            hairRight.position.y = -0.28;
-            hairRight.rotation.z = -Math.PI / 12;
+            const hairRight = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.008, 0.58, 8), hairMat);
+            hairRight.position.y = -0.26;
+            hairRight.rotation.z = -Math.PI / 10;
             hairRightPivot.add(hairRight);
 
-            // [오류 수정] 오른팔 구조화: 옷 레이어와 완전히 한 노드로 묶어 분리 현상 방지
+            // [오른팔 레이어 분리 전면 수정] 몸통에 기하학적으로 완벽 밀착 결속 구조 설계
             const rShoulder = new THREE.Group();
-            rShoulder.position.set(0.22, 0.18, 0); // 몸통 어깨선에 정확히 밀착 고정
+            rShoulder.position.set(0.20, 0.16, 0); 
             torso.add(rShoulder);
 
-            const rUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.25, 8), whiteMat); // 소매 부분
-            rUpperArm.position.y = -0.125;
+            const rUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.22, 8), whiteMat); 
+            rUpperArm.position.y = -0.11;
             rUpperArm.castShadow = true;
             rShoulder.add(rUpperArm);
 
             const rElbow = new THREE.Group();
-            rElbow.position.y = -0.125;
+            rElbow.position.y = -0.11;
             rUpperArm.add(rElbow);
 
-            const rLowerArm = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.25, 8), skinMat); // 맨살/토시 부분
-            rLowerArm.position.y = -0.125;
+            const rLowerArm = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.028, 0.22, 8), skinMat); 
+            rLowerArm.position.y = -0.11;
             rLowerArm.castShadow = true;
             rElbow.add(rLowerArm);
 
-            // 왼팔 구조 (대칭 설계)
+            // 왼팔 레이어 대칭 설계
             const lShoulder = new THREE.Group();
-            lShoulder.position.set(-0.22, 0.18, 0);
+            lShoulder.position.set(-0.20, 0.16, 0);
             torso.add(lShoulder);
 
-            const lUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.25, 8), whiteMat);
-            lUpperArm.position.y = -0.125;
+            const lUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.22, 8), whiteMat);
+            lUpperArm.position.y = -0.11;
             lUpperArm.castShadow = true;
             lShoulder.add(lUpperArm);
 
             const lElbow = new THREE.Group();
-            lElbow.position.y = -0.125;
+            lElbow.position.y = -0.11;
             lUpperArm.add(lElbow);
 
-            const lLowerArm = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.25, 8), skinMat);
-            lLowerArm.position.y = -0.125;
+            const lLowerArm = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.028, 0.22, 8), skinMat);
+            lLowerArm.position.y = -0.11;
             lLowerArm.castShadow = true;
             lElbow.add(lLowerArm);
 
-            // [기능 추가] 다리 관절 세분화 (고관절 - 무릎 구조 구축)
-            // 오른다리
+            // [요청 사항 반영] 다리 관절 모듈화 시스템 (고관절 - 무릎 이중 굽힘 축 구축)
+            // 우측 하체 기동축
             const rHip = new THREE.Group();
-            rHip.position.set(0.09, -0.25, 0);
+            rHip.position.set(0.08, -0.24, 0);
             torso.add(rHip);
 
-            const rThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.35, 8), whiteMat);
-            rThigh.position.y = -0.175;
+            const rThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.048, 0.34, 8), whiteMat);
+            rThigh.position.y = -0.17;
             rThigh.castShadow = true;
             rHip.add(rThigh);
 
             const rKnee = new THREE.Group();
-            rKnee.position.y = -0.175;
+            rKnee.position.y = -0.17;
             rThigh.add(rKnee);
 
-            const rCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.35, 8), accentMat); // 미쿠 롱부츠 컨셉
-            rCalf.position.y = -0.175;
+            const rCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.038, 0.34, 8), accentMat); 
+            rCalf.position.y = -0.17;
             rCalf.castShadow = true;
             rKnee.add(rCalf);
 
-            // 왼다리
+            // 좌측 하체 기동축
             const lHip = new THREE.Group();
-            lHip.position.set(-0.09, -0.25, 0);
+            lHip.position.set(-0.08, -0.24, 0);
             torso.add(lHip);
 
-            const lThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.35, 8), whiteMat);
-            lThigh.position.y = -0.175;
+            const lThigh = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.048, 0.34, 8), whiteMat);
+            lThigh.position.y = -0.17;
             lThigh.castShadow = true;
             lHip.add(lThigh);
 
             const lKnee = new THREE.Group();
-            lKnee.position.y = -0.175;
+            lKnee.position.y = -0.17;
             lThigh.add(lKnee);
 
-            const lCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.35, 8), accentMat);
-            lCalf.position.y = -0.175;
+            const lCalf = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.038, 0.34, 8), accentMat);
+            lCalf.position.y = -0.17;
             lCalf.castShadow = true;
             lKnee.add(lCalf);
 
@@ -214,33 +221,32 @@
         const miku = createMikuWhite();
         scene.add(miku.mesh);
 
-        // --- 4. 절차적 500가지 행동 데이터베이스 생성기 ---
-        function generateBehaviors() {
+        // --- 4. 500가지 고유 모션 데이터 절차적 빌더 ---
+        function generateProceduralBehaviors() {
             const db = [];
-            const coreTypes = ['squat', 'walk', 'run', 'dance', 'idle_wave', 'active_jump'];
+            const actionPool = ['squat_depth', 'natural_walk', 'dynamic_run', 'idol_dance', 'elegant_wave', 'rhythm_jump'];
             
             for (let i = 0; i < 500; i++) {
-                const type = coreTypes[i % coreTypes.length];
+                const type = actionPool[i % actionPool.length];
                 db.push({
                     id: i,
-                    name: `${type.toUpperCase()} (Pattern No.${String(i).padStart(3, '0')})`,
+                    name: `${type.toUpperCase()} (모션 패턴 No.${String(i + 1).padStart(3, '0')})`,
                     type: type,
-                    // 기본 움직임 계수들에 미세 렌덤값을 주어 500가지가 모두 고유한 궤적을 갖게 만듦
-                    speed: 1.8 + Math.sin(i * 0.45) * 0.6,
-                    armRange: 0.5 + (i % 7) * 0.12,  // 확장된 관절 각도 (최대 약 1.3라디안까지 다이내믹하게)
-                    legRange: 0.4 + (i % 5) * 0.15,  // 다리 관절 가동성 대폭 확장
-                    phaseShift: (i % 12) * (Math.PI / 6)
+                    speed: 1.6 + Math.sin(i * 0.23) * 0.5,
+                    armRange: 0.6 + (i % 6) * 0.14,  // 증폭된 상체 관절 가동 범위 적용
+                    legRange: 0.5 + (i % 5) * 0.16,  // 실시간 다리 구부림 한계 확장 인자
+                    phaseOffset: (i % 8) * (Math.PI / 4)
                 });
             }
             return db;
         }
 
-        const behaviorDatabase = generateBehaviors();
+        const behaviorDatabase = generateProceduralBehaviors();
         let currentBehavior = behaviorDatabase[0];
-        let actionTimer = 0;
-        const behaviorNameUI = document.getElementById('behavior-name');
+        let stateTimer = 0;
+        const uiText = document.getElementById('behavior-name');
 
-        // --- 5. 실시간 애니메이션 연산 & 물리 예외 처리 (관통 방지) ---
+        // --- 5. 실시간 애니메이션 루프 & 관통 제약 물리 공식 엔진 ---
         const clock = new THREE.Clock();
 
         function animate() {
@@ -253,18 +259,18 @@
             const b = currentBehavior;
             const t = time * b.speed;
 
-            // UI 텍스트 업데이트
-            behaviorNameUI.innerText = b.name;
+            // 상단 모션 텍스트 동적 동기화
+            uiText.innerText = b.name;
 
-            // 3초 마다 자동으로 다음 패턴 무작위 전환 조절
-            actionTimer += delta;
-            if (actionTimer > 3.0) {
+            // 3초 단위 타이머 스위칭 메커니즘
+            stateTimer += delta;
+            if (stateTimer > 3.0) {
                 currentBehavior = behaviorDatabase[Math.floor(Math.random() * 500)];
-                actionTimer = 0;
+                stateTimer = 0;
             }
 
-            // [초기화] 매 프레임 연산 전 본 구조를 표준 기준점으로 리셋
-            j.torso.position.y = 0.85;
+            // [초기화 가이드레일] 가동전 관절 회전 기본 베이스값 초기화 안정화
+            j.torso.position.y = 0.9;
             j.torso.rotation.set(0, 0, 0);
             j.head.rotation.set(0, 0, 0);
             j.rShoulder.rotation.set(0, 0, 0);
@@ -276,126 +282,126 @@
             j.rKnee.rotation.set(0, 0, 0);
             j.lKnee.rotation.set(0, 0, 0);
 
-            // 기본 머리카락 흔들림 효과 (자연스러운 서브 모션)
-            j.hairLeftPivot.rotation.z = Math.sin(t * 1.5) * 0.08;
-            j.hairRightPivot.rotation.z = -Math.sin(t * 1.5) * 0.08;
+            // 미쿠 헤어 2차 흔들림 구현
+            j.hairLeftPivot.rotation.z = Math.sin(t * 1.3) * 0.07;
+            j.hairRightPivot.rotation.z = -Math.sin(t * 1.3) * 0.07;
 
-            // --- 500가지 절차적 행동 분기 처리 ---
+            // --- 절차적 행동 상태 머신 수학 연산 연동 ---
             switch (b.type) {
-                case 'squat': // 요청하신 다리 관절 굽히기 및 깊은 가동 범위 구현
-                    const squatWeight = (Math.sin(t) + 1) / 2; // 0 ~ 1 바운스
-                    j.torso.position.y = 0.85 - (squatWeight * 0.28); // 하강 깊이 증가
+                case 'squat_depth': // 다리 관절 깊게 구부리기 행동 집중 매핑
+                    const waveSquat = (Math.sin(t) + 1) / 2; // 0에서 1 무한 루프
+                    j.torso.position.y = 0.9 - (waveSquat * 0.32); // 바닥 기준 몸통 다운스케일링
                     
-                    // 고관절(Hip) 전방 회전 및 무릎(Knee) 역방향 깊은 스쿼트 매핑
-                    j.rHip.rotation.x = squatWeight * b.legRange * 1.1;
-                    j.lHip.rotation.x = squatWeight * b.legRange * 1.1;
-                    j.rKnee.rotation.x = -squatWeight * b.legRange * 1.8; // 다리 깊게 굽힘
-                    j.lKnee.rotation.x = -squatWeight * b.legRange * 1.8;
+                    // 고관절 전방 회전 및 무릎 뒤쪽으로 깊게 완충 연산
+                    j.rHip.rotation.x = waveSquat * b.legRange * 0.9;
+                    j.lHip.rotation.x = waveSquat * b.legRange * 0.9;
+                    j.rKnee.rotation.x = -waveSquat * b.legRange * 1.7; 
+                    j.lKnee.rotation.x = -waveSquat * b.legRange * 1.7;
                     
-                    // 중심을 잡기 위해 팔은 앞으로 길게 뻗음
-                    j.rShoulder.rotation.x = -squatWeight * 1.0;
-                    j.lShoulder.rotation.x = -squatWeight * 1.0;
+                    // 팔을 앞으로 뻗어 균형 맞춤 연출
+                    j.rShoulder.rotation.x = -waveSquat * 0.9;
+                    j.lShoulder.rotation.x = -waveSquat * 0.9;
                     break;
 
-                case 'walk':
-                    // 좌우 교차 위상차 피드백 (허우적거림 삭제, 정밀 걷기)
-                    j.rShoulder.rotation.x = Math.sin(t) * b.armRange * 0.8;
-                    j.lShoulder.rotation.x = -Math.sin(t) * b.armRange * 0.8;
+                case 'natural_walk':
+                    // 위상 변위값을 이용해 자연스러운 걷기 구현 (허우적거림 방지)
+                    j.rShoulder.rotation.x = Math.sin(t) * b.armRange * 0.75;
+                    j.lShoulder.rotation.x = -Math.sin(t) * b.armRange * 0.75;
                     
-                    j.rHip.rotation.x = -Math.sin(t) * b.legRange;
-                    j.lHip.rotation.x = Math.sin(t) * b.legRange;
+                    j.rHip.rotation.x = -Math.sin(t) * b.legRange * 0.9;
+                    j.lHip.rotation.x = Math.sin(t) * b.legRange * 0.9;
                     
-                    // 걸음걸이 시 뒤로 가기 직전 다리 관절 리얼타임 굽힘
-                    j.rKnee.rotation.x = (Math.sin(t) > 0 ? -Math.sin(t) : 0) * b.legRange * 1.2;
-                    j.lKnee.rotation.x = (Math.sin(t) < 0 ? Math.sin(t) : 0) * b.legRange * 1.2;
+                    // 뒷다리 이탈 시 무릎이 역관절 없이 자연스럽게 꺾이도록 가이드
+                    j.rKnee.rotation.x = (Math.sin(t) > 0 ? -Math.sin(t) : 0) * b.legRange * 1.1;
+                    j.lKnee.rotation.x = (Math.sin(t) < 0 ? Math.sin(t) : 0) * b.legRange * 1.1;
                     
-                    j.torso.position.y = 0.85 + Math.abs(Math.sin(t * 2)) * 0.03;
+                    j.torso.position.y = 0.9 + Math.abs(Math.sin(t * 2)) * 0.025;
                     break;
 
-                case 'run':
-                    // 역동적인 큰 각도의 달리기
-                    j.rShoulder.rotation.x = Math.sin(t) * b.armRange * 1.3;
-                    j.lShoulder.rotation.x = -Math.sin(t) * b.armRange * 1.3;
-                    j.rElbow.rotation.x = -0.5; // 뛰기 편하게 기본 팔꿈치 기본 락 설정
-                    j.lElbow.rotation.x = -0.5;
+                case 'dynamic_run':
+                    // 속도감과 가동 반경을 최대로 확보한 질주 시뮬레이션
+                    j.rShoulder.rotation.x = Math.sin(t) * b.armRange * 1.2;
+                    j.lShoulder.rotation.x = -Math.sin(t) * b.armRange * 1.2;
+                    j.rElbow.rotation.x = -0.4; 
+                    j.lElbow.rotation.x = -0.4;
 
-                    j.rHip.rotation.x = -Math.sin(t) * b.legRange * 1.3;
-                    j.lHip.rotation.x = Math.sin(t) * b.legRange * 1.3;
-                    j.rKnee.rotation.x = (Math.sin(t) > 0 ? -Math.sin(t) : 0) * b.legRange * 1.6;
-                    j.lKnee.rotation.x = (Math.sin(t) < 0 ? Math.sin(t) : 0) * b.legRange * 1.6;
+                    j.rHip.rotation.x = -Math.sin(t) * b.legRange * 1.2;
+                    j.lHip.rotation.x = Math.sin(t) * b.legRange * 1.2;
+                    j.rKnee.rotation.x = (Math.sin(t) > 0 ? -Math.sin(t) : 0) * b.legRange * 1.5;
+                    j.lKnee.rotation.x = (Math.sin(t) < 0 ? Math.sin(t) : 0) * b.legRange * 1.5;
 
-                    j.torso.position.y = 0.85 + Math.abs(Math.sin(t * 2)) * 0.08;
-                    j.torso.rotation.x = 0.15; // 앞으로 살짝 숙인 상체
+                    j.torso.position.y = 0.9 + Math.abs(Math.sin(t * 2)) * 0.07;
+                    j.torso.rotation.x = 0.12; 
                     break;
 
-                case 'dance':
-                    // 가동 범위를 극한으로 써서 춤추는 무대 모션
-                    j.rShoulder.rotation.z = (Math.sin(t) * b.armRange) + 0.4;
-                    j.lShoulder.rotation.z = (-Math.cos(t) * b.armRange) - 0.4;
-                    j.rShoulder.rotation.x = Math.cos(t * 0.5) * b.armRange;
-                    j.lShoulder.rotation.x = Math.sin(t * 0.5) * b.armRange;
+                case 'idol_dance':
+                    // 무대 안무 패턴 연출 구현
+                    j.rShoulder.rotation.z = (Math.sin(t) * b.armRange * 0.8) + 0.5;
+                    j.lShoulder.rotation.z = (-Math.cos(t) * b.armRange * 0.8) - 0.5;
+                    j.rShoulder.rotation.x = Math.cos(t * 0.6) * b.armRange;
+                    j.lShoulder.rotation.x = Math.sin(t * 0.6) * b.armRange;
 
-                    j.rHip.rotation.z = Math.sin(t) * 0.15;
-                    j.lHip.rotation.z = Math.sin(t) * 0.15;
-                    j.rKnee.rotation.x = -Math.abs(Math.sin(t)) * b.legRange;
-                    j.lKnee.rotation.x = -Math.abs(Math.cos(t)) * b.legRange;
+                    j.rHip.rotation.z = Math.sin(t) * 0.12;
+                    j.lHip.rotation.z = Math.sin(t) * 0.12;
+                    j.rKnee.rotation.x = -Math.abs(Math.sin(t)) * b.legRange * 0.8;
+                    j.lKnee.rotation.x = -Math.abs(Math.cos(t)) * b.legRange * 0.8;
                     break;
 
-                case 'idle_wave':
-                    // 허우적거리지 않고 부드럽게 한 손 흔드는 아이돌식 제스처
-                    j.rShoulder.rotation.z = 1.2 + Math.sin(t * 1.5) * 0.2; // 팔을 위로 고정
-                    j.rElbow.rotation.z = Math.sin(t * 3) * 0.4; // 팔꿈치 아랫단 위상차 손흔들기
+                case 'elegant_wave':
+                    // 절제되면서도 가동 범위가 큰 손인사/웨이브 연출
+                    j.rShoulder.rotation.z = 1.1 + Math.sin(t * 1.4) * 0.15; 
+                    j.rElbow.rotation.z = Math.sin(t * 2.8) * 0.35; 
                     
-                    j.lShoulder.rotation.z = -0.15 + Math.sin(t * 0.5) * 0.05; 
-                    j.rHip.rotation.x = Math.sin(t) * 0.1;
+                    j.lShoulder.rotation.z = -0.12 + Math.sin(t * 0.4) * 0.04; 
+                    j.rHip.rotation.x = Math.sin(t) * 0.08;
                     break;
 
-                case 'active_jump':
-                    // 점프 뛰기 전 힘을 모아 무릎을 완충하는 콤플렉스 가동 모션
-                    const jumpCycle = Math.sin(t);
-                    if(jumpCycle < 0) { // 준비 동작 (무릎 크게 구부리기)
-                        j.torso.position.y = 0.85 + (jumpCycle * 0.2);
-                        j.rHip.rotation.x = -jumpCycle * b.legRange * 0.8;
-                        j.lHip.rotation.x = -jumpCycle * b.legRange * 0.8;
-                        j.rKnee.rotation.x = jumpCycle * b.legRange * 1.5;
-                        j.lKnee.rotation.x = jumpCycle * b.legRange * 1.5;
-                    } else { // 도약 순간 공중 연출
-                        j.torso.position.y = 0.85 + (jumpCycle * 0.4);
-                        j.rShoulder.rotation.y = -0.3;
-                        j.lShoulder.rotation.y = 0.3;
+                case 'rhythm_jump':
+                    // 도약 전 하체 충격 흡수 모션 결합형 점프
+                    const waveJump = Math.sin(t);
+                    if(waveJump < 0) { 
+                        j.torso.position.y = 0.9 + (waveJump * 0.18);
+                        j.rHip.rotation.x = -waveJump * b.legRange * 0.7;
+                        j.lHip.rotation.x = -waveJump * b.legRange * 0.7;
+                        j.rKnee.rotation.x = waveJump * b.legRange * 1.4;
+                        j.lKnee.rotation.x = waveJump * b.legRange * 1.4;
+                    } else { 
+                        j.torso.position.y = 0.9 + (waveJump * 0.35);
+                        j.rShoulder.rotation.z = 0.4;
+                        j.lShoulder.rotation.z = -0.4;
                     }
                     break;
             }
 
-            // --- 6. [핵심 제한장치] 몸통 관통 완전 방지 컬리전 필터 ---
-            // 오른팔 제한: 어깨 Z축이 0.08 이하로 내려가면 몸통 메쉬를 침범하므로 최솟값 강제 차단
+            // --- 6. [핵심 제어 가드레일] 실시간 몸통 관통 완전 차단 로직 (Collision Constraint) ---
+            // 오른팔 한계각 제어: Z축 회전 각도가 최소 안전 마진 이하로 좁혀져 몸통을 뚫는 사고 예방
             if (j.rShoulder.rotation.z < 0.08) {
                 j.rShoulder.rotation.z = 0.08;
             }
-            // 왼팔 제한: 대칭축이므로 -0.08 이상으로 안쪽으로 파고드는 것을 벽으로 차단
+            // 왼팔 한계각 제어: 대칭 방향의 마진 격리 벽 설정
             if (j.lShoulder.rotation.z > -0.08) {
                 j.lShoulder.rotation.z = -0.08;
             }
 
-            // 추가 관통 보정: X축 회전 반경이 클 때 내전 현상이 발생하지 않도록 Y축 보조 오프셋을 조절
-            if(Math.abs(j.rShoulder.rotation.x) > 0.5 && j.rShoulder.rotation.z < 0.2) {
-                j.rShoulder.rotation.z = 0.2;
+            // X축 대반경 회전 운동 연동 시 겨드랑이 관통 교정 오프셋 확보
+            if(Math.abs(j.rShoulder.rotation.x) > 0.4 && j.rShoulder.rotation.z < 0.18) {
+                j.rShoulder.rotation.z = 0.18;
             }
-            if(Math.abs(j.lShoulder.rotation.x) > 0.5 && j.lShoulder.rotation.z > -0.2) {
-                j.lShoulder.rotation.z = -0.2;
+            if(Math.abs(j.lShoulder.rotation.x) > 0.4 && j.lShoulder.rotation.z > -0.18) {
+                j.lShoulder.rotation.z = -0.18;
             }
 
-            // 팔꿈치 역관절 꺾임 방지 (인체 해부학적 자연스러운 한계각 보정)
-            if (b.type !== 'idle_wave') { 
-                j.rElbow.rotation.x = -Math.abs(Math.sin(t * 0.8 + b.phaseShift)) * 0.7;
-                j.lElbow.rotation.x = -Math.abs(Math.cos(t * 0.8 + b.phaseShift)) * 0.7;
+            // 생체 역학적 한계 보정 (팔꿈치 앞쪽 방향 고정 락 및 허우적거림 억제)
+            if (b.type !== 'elegant_wave') { 
+                j.rElbow.rotation.x = -Math.abs(Math.sin(t * 0.8 + b.phaseOffset)) * 0.6;
+                j.lElbow.rotation.x = -Math.abs(Math.cos(t * 0.8 + b.phaseOffset)) * 0.6;
             }
 
             controls.update();
             renderer.render(scene, camera);
         }
 
-        // --- 7. 창 크기 대응 반응형 윈도우 리사이즈 처리 ---
+        // --- 7. 유연한 반응형 뷰포트 처리 (Resize Configuration) ---
         window.addEventListener('resize', onWindowResize, false);
 
         function onWindowResize() {
@@ -404,7 +410,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // 루프 실행
+        // 엔진 초기 가동
         animate();
     </script>
 </body>
