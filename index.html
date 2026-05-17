@@ -6,11 +6,11 @@
 <title>GundamTrainer AI</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;700&family=Share+Tech+Mono&display=swap');
-  :root{--teal:#39c5bb;--pink:#ff69b4;--dark:#0a0e1a;--darker:#060810;--glow:rgba(57,197,187,0.4);--panel:rgba(10,20,40,0.85);--main:#e0f7f5;--dim:rgba(224,247,245,0.5)}
+  :root{--teal:#39c5bb;--pink:#ff69b4;--dark:#0a0e1a;--darker:#060810;--glow:rgba(57,197,187,0.4);--panel:rgba(10,20,40,0.92);--main:#e0f7f5;--dim:rgba(224,247,245,0.5)}
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:var(--darker);color:var(--main);font-family:'Zen Kaku Gothic New',sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column}
-  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 80%,rgba(57,197,187,0.08) 0%,transparent 70%),radial-gradient(ellipse 40% 30% at 20% 20%,rgba(255,105,180,0.04) 0%,transparent 60%);pointer-events:none;z-index:0}
-  header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid rgba(57,197,187,0.2);background:rgba(6,8,16,0.9);backdrop-filter:blur(12px)}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 80%,rgba(57,197,187,0.06) 0%,transparent 70%);pointer-events:none;z-index:0}
+  header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid rgba(57,197,187,0.2);background:rgba(6,8,16,0.95);backdrop-filter:blur(12px)}
   .logo{display:flex;align-items:center;gap:10px}
   .logo-mark{width:32px;height:32px;border:2px solid var(--teal);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--teal);animation:pulse 3s infinite}
   @keyframes pulse{0%,100%{box-shadow:0 0 8px var(--glow)}50%{box-shadow:0 0 20px var(--glow),0 0 40px rgba(57,197,187,0.2)}}
@@ -20,57 +20,68 @@
   .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal);animation:blink 2s infinite}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
   main{flex:1;display:flex;overflow:hidden;position:relative;z-index:1}
-  #cv{flex:1;position:relative;overflow:hidden;background:var(--darker)}
+  #cv{flex:1;position:relative;overflow:hidden;background:#05080f}
   #cv canvas{display:block;width:100%!important;height:100%!important}
-  #cv::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none}
+  #cv::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.015) 3px,rgba(0,0,0,.015) 4px);pointer-events:none}
   .corner{position:absolute;width:20px;height:20px;z-index:5;pointer-events:none}
   .corner.tl{top:12px;left:12px;border-top:2px solid var(--teal);border-left:2px solid var(--teal)}
   .corner.tr{top:12px;right:12px;border-top:2px solid var(--teal);border-right:2px solid var(--teal)}
   .corner.bl{bottom:12px;left:12px;border-bottom:2px solid var(--teal);border-left:2px solid var(--teal)}
   .corner.br{bottom:12px;right:12px;border-bottom:2px solid var(--teal);border-right:2px solid var(--teal)}
-  #loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--darker);z-index:20;gap:20px;transition:opacity .8s}
+  #loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#05080f;z-index:20;gap:20px;transition:opacity .8s}
   #loading.hidden{opacity:0;pointer-events:none}
   .ring{width:60px;height:60px;border:2px solid rgba(57,197,187,.2);border-top-color:var(--teal);border-radius:50%;animation:spin 1s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   .lt{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--teal);letter-spacing:.3em}
   #prog{font-size:10px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:.2em}
-  #panel{width:360px;display:flex;flex-direction:column;background:var(--panel);border-left:1px solid rgba(57,197,187,.15);backdrop-filter:blur(16px)}
-  .ph{padding:16px 20px;border-bottom:1px solid rgba(57,197,187,.1);display:flex;align-items:center;gap:10px}
-  .pt{font-size:12px;letter-spacing:.25em;color:var(--teal);font-family:'Share Tech Mono',monospace;text-transform:uppercase}
-  #msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:rgba(57,197,187,.3) transparent}
-  .msg{display:flex;flex-direction:column;gap:4px;animation:mi .3s ease}
-  @keyframes mi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  /* 패널 */
+  #panel{width:370px;display:flex;flex-direction:column;background:var(--panel);border-left:1px solid rgba(57,197,187,.15);backdrop-filter:blur(20px)}
+  .ph{padding:14px 20px;border-bottom:1px solid rgba(57,197,187,.1);display:flex;align-items:center;gap:10px}
+  .pt{font-size:11px;letter-spacing:.25em;color:var(--teal);font-family:'Share Tech Mono',monospace;text-transform:uppercase}
+  #msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:rgba(57,197,187,.3) transparent}
+  .msg{display:flex;flex-direction:column;gap:3px;animation:mi .3s ease}
+  @keyframes mi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
   .msg.u{align-items:flex-end}.msg.m{align-items:flex-start}
   .ml{font-size:9px;letter-spacing:.2em;color:var(--dim);font-family:'Share Tech Mono',monospace}
-  .mb{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6}
+  .mb{max-width:88%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.6}
   .msg.u .mb{background:rgba(57,197,187,.15);border:1px solid rgba(57,197,187,.3);border-bottom-right-radius:2px}
-  .msg.m .mb{background:rgba(255,105,180,.08);border:1px solid rgba(255,105,180,.2);border-bottom-left-radius:2px}
-  .ti{display:flex;gap:4px;padding:8px 0;align-items:center}
+  .msg.m .mb{background:rgba(255,105,180,.1);border:1px solid rgba(255,105,180,.25);border-bottom-left-radius:2px}
+  .ti{display:flex;gap:4px;padding:6px 0;align-items:center}
   .ti span{width:5px;height:5px;background:var(--pink);border-radius:50%;animation:bd 1.2s infinite}
   .ti span:nth-child(2){animation-delay:.2s}.ti span:nth-child(3){animation-delay:.4s}
   @keyframes bd{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-6px);opacity:1}}
-  #ctrl{padding:16px;border-top:1px solid rgba(57,197,187,.1);display:flex;flex-direction:column;gap:10px}
+  #ctrl{padding:14px;border-top:1px solid rgba(57,197,187,.1);display:flex;flex-direction:column;gap:9px}
   #tir{display:flex;gap:8px}
-  #ti{flex:1;background:rgba(57,197,187,.06);border:1px solid rgba(57,197,187,.2);border-radius:8px;padding:10px 14px;color:var(--main);font-family:'Zen Kaku Gothic New',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
-  #ti:focus{border-color:var(--teal);box-shadow:0 0 12px rgba(57,197,187,.15)}
+  #ti{flex:1;background:rgba(57,197,187,.06);border:1px solid rgba(57,197,187,.2);border-radius:8px;padding:9px 13px;color:var(--main);font-family:'Zen Kaku Gothic New',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+  #ti:focus{border-color:var(--teal);box-shadow:0 0 10px rgba(57,197,187,.12)}
   #ti::placeholder{color:var(--dim)}
   .btn{border:none;border-radius:8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.1em;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
-  #sb{padding:10px 16px;background:var(--teal);color:var(--dark);font-weight:bold}
+  #sb{padding:9px 15px;background:var(--teal);color:var(--dark);font-weight:bold}
   #sb:hover{background:#4dd9cf;box-shadow:0 0 16px rgba(57,197,187,.5)}
-  #mb2{padding:12px 20px;background:rgba(255,105,180,.1);border:1px solid rgba(255,105,180,.3);color:var(--pink);font-size:13px}
-  #mb2:hover{background:rgba(255,105,180,.2);box-shadow:0 0 16px rgba(255,105,180,.3)}
-  #mb2.on{background:var(--pink);color:#fff;box-shadow:0 0 20px rgba(255,105,180,.6);animation:mp 1s infinite}
-  @keyframes mp{0%,100%{box-shadow:0 0 16px rgba(255,105,180,.5)}50%{box-shadow:0 0 30px rgba(255,105,180,.9)}}
-  .mh{text-align:center;font-size:10px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:.15em}
-  #aks{padding:12px;background:rgba(255,180,0,.06);border:1px solid rgba(255,180,0,.2);border-radius:8px}
-  #akl{font-size:9px;color:rgba(255,180,0,.7);letter-spacing:.2em;font-family:'Share Tech Mono',monospace;margin-bottom:6px}
+  /* 마이크 영역 */
+  #mic-wrap{display:flex;flex-direction:column;gap:6px}
+  #mb2{padding:11px 20px;background:rgba(255,105,180,.1);border:1px solid rgba(255,105,180,.3);color:var(--pink);font-size:13px;width:100%}
+  #mb2:hover{background:rgba(255,105,180,.2)}
+  #mb2.on{background:var(--pink);color:#fff;animation:mp 1s infinite}
+  @keyframes mp{0%,100%{box-shadow:0 0 12px rgba(255,105,180,.5)}50%{box-shadow:0 0 28px rgba(255,105,180,.9)}}
+  /* 볼륨 시각화 */
+  #vol-wrap{display:flex;align-items:center;gap:8px;height:28px;padding:0 4px;opacity:0;transition:opacity .3s}
+  #vol-wrap.active{opacity:1}
+  #vol-label{font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;white-space:nowrap}
+  #vol-bars{display:flex;gap:2px;align-items:flex-end;height:100%}
+  .vb{width:4px;background:var(--teal);border-radius:2px;transition:height .08s;min-height:2px}
+  #vol-text{font-size:9px;color:var(--teal);font-family:'Share Tech Mono',monospace;min-width:30px;text-align:right}
+  .mh{text-align:center;font-size:10px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:.12em}
+  /* API 키 */
+  #aks{padding:11px;background:rgba(255,180,0,.06);border:1px solid rgba(255,180,0,.2);border-radius:8px}
+  #akl{font-size:9px;color:rgba(255,180,0,.7);letter-spacing:.2em;font-family:'Share Tech Mono',monospace;margin-bottom:5px}
   #akr{display:flex;gap:6px}
-  #aki{flex:1;background:rgba(255,180,0,.05);border:1px solid rgba(255,180,0,.2);border-radius:6px;padding:7px 10px;color:var(--main);font-family:'Share Tech Mono',monospace;font-size:11px;outline:none}
-  #aksv{padding:7px 12px;background:rgba(255,180,0,.15);border:1px solid rgba(255,180,0,.3);color:rgba(255,200,0,.9);font-size:10px;border-radius:6px;cursor:pointer;font-family:'Share Tech Mono',monospace}
+  #aki{flex:1;background:rgba(255,180,0,.05);border:1px solid rgba(255,180,0,.2);border-radius:6px;padding:6px 10px;color:var(--main);font-family:'Share Tech Mono',monospace;font-size:11px;outline:none}
+  #aksv{padding:6px 11px;background:rgba(255,180,0,.15);border:1px solid rgba(255,180,0,.3);color:rgba(255,200,0,.9);font-size:10px;border-radius:6px;cursor:pointer;font-family:'Share Tech Mono',monospace}
   #msr{display:flex;gap:6px}
-  .mb3{flex:1;padding:7px;background:rgba(57,197,187,.05);border:1px solid rgba(57,197,187,.15);color:var(--dim);font-size:10px;border-radius:6px;cursor:pointer;transition:all .2s;font-family:'Share Tech Mono',monospace}
+  .mb3{flex:1;padding:6px;background:rgba(57,197,187,.05);border:1px solid rgba(57,197,187,.15);color:var(--dim);font-size:10px;border-radius:6px;cursor:pointer;transition:all .2s;font-family:'Share Tech Mono',monospace}
   .mb3.active{background:rgba(57,197,187,.15);border-color:var(--teal);color:var(--teal)}
-  #ed{display:flex;gap:6px;align-items:center;padding:8px 12px;background:rgba(57,197,187,.04);border:1px solid rgba(57,197,187,.1);border-radius:8px}
+  #ed{display:flex;gap:6px;align-items:center;padding:7px 11px;background:rgba(57,197,187,.04);border:1px solid rgba(57,197,187,.1);border-radius:8px}
   #el{font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:.15em;flex:1}
   #ev{font-size:11px;color:var(--teal);font-family:'Share Tech Mono',monospace}
   #msgs::-webkit-scrollbar{width:3px}
@@ -124,8 +135,22 @@
         <input type="text" id="ti" placeholder="미쿠에게 말 걸어보세요..." onkeydown="if(event.key==='Enter')send()">
         <button class="btn" id="sb" onclick="send()">▶</button>
       </div>
-      <button class="btn" id="mb2" onclick="toggleMic()">🎤 마이크로 말하기</button>
-      <div class="mh" id="mh">클릭하면 음성인식 시작</div>
+      <div id="mic-wrap">
+        <button class="btn" id="mb2" onclick="toggleMic()">🎤 마이크로 말하기</button>
+        <div id="vol-wrap">
+          <div id="vol-label">MIC</div>
+          <div id="vol-bars">
+            <div class="vb" id="vb0"></div><div class="vb" id="vb1"></div>
+            <div class="vb" id="vb2"></div><div class="vb" id="vb3"></div>
+            <div class="vb" id="vb4"></div><div class="vb" id="vb5"></div>
+            <div class="vb" id="vb6"></div><div class="vb" id="vb7"></div>
+            <div class="vb" id="vb8"></div><div class="vb" id="vb9"></div>
+            <div class="vb" id="vb10"></div><div class="vb" id="vb11"></div>
+          </div>
+          <div id="vol-text">0%</div>
+        </div>
+        <div class="mh" id="mh">클릭하면 음성인식 시작</div>
+      </div>
     </div>
   </div>
 </main>
@@ -139,36 +164,50 @@ import * as THREE from 'three';
 import { MMDLoader } from 'three/addons/loaders/MMDLoader.js';
 
 // ── 상태 ──
-let KEY='', curModel='Black', scene, cam, renderer, mesh, clock;
-let speaking=false, listening=false, recog=null, animId=null, lipT=0;
+let KEY='', curModel='Black';
+let scene, cam, renderer, mesh, clock;
+let speaking=false, listening=false, recog=null, animId=null;
+let lipT=0, lipTarget=0;
+let audioCtx=null, analyser=null, micStream=null, volAnimId=null;
+let curEmotion='happy';
 
+// 감정별 모프 + 몸 동작 정의
 const EMOTIONS={
-  happy:{e:'😊',m:{'にっこり':.8}},
-  sad:{e:'😢',m:{'困る':.7}},
-  angry:{e:'😠',m:{'怒り':.8}},
-  surprised:{e:'😲',m:{'驚き':.9}},
-  neutral:{e:'😐',m:{}}
+  happy:{e:'😊',m:{'にっこり':.9,'笑い':.4},sway:.06,speed:.4},
+  sad:{e:'😢',m:{'困る':.8,'悲しい':.5},sway:.02,speed:.2},
+  angry:{e:'😠',m:{'怒り':.9},sway:.08,speed:.6},
+  surprised:{e:'😲',m:{'驚き':1.0},sway:.1,speed:.8},
+  neutral:{e:'😐',m:{},sway:.04,speed:.35}
 };
 const VOWELS=['あ','い','う','え','お'];
+const ALL_EXPR=['にっこり','笑い','困る','悲しい','怒り','驚き','ω'];
 
 // ── Three.js 초기화 ──
 function init3D(){
   const c=document.getElementById('cv');
   scene=new THREE.Scene();
-  scene.background=new THREE.Color(0x0a0e1a);
-  scene.fog=new THREE.FogExp2(0x0a0e1a,.015);
+  scene.background=new THREE.Color(0x05080f);
 
-  scene.add(new THREE.AmbientLight(0x8899bb,1.2));
-  const d=new THREE.DirectionalLight(0x39c5bb,1.5); d.position.set(1,3,3); scene.add(d);
-  const r=new THREE.DirectionalLight(0xff69b4,.5); r.position.set(-3,1,-2); scene.add(r);
-  const f=new THREE.DirectionalLight(0xffffff,.4); f.position.set(0,-1,2); scene.add(f);
+  // 강한 조명으로 반투명 해결
+  scene.add(new THREE.AmbientLight(0xffffff, 2.5));
+  const d=new THREE.DirectionalLight(0xffffff, 3.0);
+  d.position.set(0,5,5); scene.add(d);
+  const d2=new THREE.DirectionalLight(0x39c5bb, 1.5);
+  d2.position.set(-3,3,2); scene.add(d2);
+  const d3=new THREE.DirectionalLight(0xff69b4, 0.8);
+  d3.position.set(3,1,-2); scene.add(d3);
+  const d4=new THREE.DirectionalLight(0xffffff, 1.5);
+  d4.position.set(0,-2,3); scene.add(d4);
 
   cam=new THREE.PerspectiveCamera(25,c.clientWidth/c.clientHeight,.1,500);
-  cam.position.set(0,18,30); cam.lookAt(0,12,0);
+  cam.position.set(0,18,30);cam.lookAt(0,12,0);
 
-  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
   renderer.setSize(c.clientWidth,c.clientHeight);
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.2;
   c.appendChild(renderer.domElement);
 
   clock=new THREE.Clock();
@@ -183,21 +222,36 @@ function init3D(){
 function loadMiku(){
   document.getElementById('prog').textContent=`${curModel}.pmx 로딩 중...`;
   const loader=new MMDLoader();
-  loader.load(
-    `./${curModel}.pmx`,
+  loader.load(`./${curModel}.pmx`,
     obj=>{
       if(mesh){scene.remove(mesh);mesh=null;}
       mesh=obj;
       mesh.scale.setScalar(0.085);
       mesh.position.set(0,0,0);
+
+      // 재질 불투명하게 강제 설정
+      mesh.traverse(child=>{
+        if(child.isMesh&&child.material){
+          const mats=Array.isArray(child.material)?child.material:[child.material];
+          mats.forEach(mat=>{
+            mat.transparent=false;
+            mat.opacity=1.0;
+            mat.depthWrite=true;
+            mat.side=THREE.FrontSide;
+            if(mat.map)mat.map.colorSpace=THREE.SRGBColorSpace;
+          });
+        }
+      });
+
       scene.add(mesh);
       // 카메라 자동 맞춤
       const box=new THREE.Box3().setFromObject(mesh);
       const cen=box.getCenter(new THREE.Vector3());
       const sz=box.getSize(new THREE.Vector3());
       const md=Math.max(sz.x,sz.y,sz.z);
-      cam.position.set(cen.x,cen.y+md*.3,cen.z+md*2);
-      cam.lookAt(cen.x,cen.y,cen.z);
+      cam.position.set(cen.x,cen.y+md*.25,cen.z+md*1.9);
+      cam.lookAt(cen.x,cen.y+md*.05,cen.z);
+
       hideLoading();
       document.getElementById('st').textContent='ONLINE';
       startLoop();
@@ -210,24 +264,58 @@ function loadMiku(){
 // ── 애니메이션 루프 ──
 function startLoop(){
   if(animId)cancelAnimationFrame(animId);
+  const emo=()=>EMOTIONS[curEmotion]||EMOTIONS.neutral;
   const loop=()=>{
     animId=requestAnimationFrame(loop);
     const t=clock.getElapsedTime();
+    const e=emo();
     if(mesh){
-      mesh.rotation.y=Math.sin(t*.4)*.05;
-      mesh.position.y=Math.sin(t*.6)*.1;
-      // 입 움직임
+      // 감정별 몸 흔들림
+      mesh.rotation.y=Math.sin(t*e.speed)*e.sway;
+      mesh.position.y=Math.sin(t*(e.speed*.7))*.12;
+
+      // 입 움직임 (부드럽게)
       if(speaking){
-        lipT+=.3;
-        const v=Math.abs(Math.sin(lipT*3))*.6;
-        VOWELS.forEach(m=>setMorph(m,0));
-        setMorph(VOWELS[Math.floor(lipT)%VOWELS.length],v);
+        lipT+=.25;
+        const v=Math.abs(Math.sin(lipT*4))*.7;
+        lipTarget=v;
       } else {
-        VOWELS.forEach(m=>setMorph(m,0));
+        lipTarget=0;
       }
-      // 눈 깜빡임
-      const bf=Math.floor(t*10)%50;
-      setMorph('まばたき',bf<3?1:0);
+      // 현재 립싱크 값을 부드럽게 lerp
+      const curLip=VOWELS.map((_,i)=>{
+        const ch=mesh;
+        let cur=0;
+        ch.traverse(c=>{
+          if(c.isMesh&&c.morphTargetDictionary){
+            const idx=c.morphTargetDictionary[VOWELS[i]];
+            if(idx!==undefined&&c.morphTargetInfluences)cur=c.morphTargetInfluences[idx];
+          }
+        });
+        return cur;
+      });
+      VOWELS.forEach((v,i)=>{
+        const target=speaking&&i===Math.floor(lipT)%VOWELS.length?lipTarget:0;
+        setMorph(v, curLip[i]+(target-curLip[i])*.3);
+      });
+
+      // 눈 깜빡임 (4초마다)
+      const bf=Math.floor(t*60)%240;
+      if(bf<4)setMorph('まばたき',bf/4);
+      else if(bf<8)setMorph('まばたき',1-(bf-4)/4);
+      else setMorph('まばたき',0);
+
+      // 헤드 아이들 (감정에 따라 다름)
+      mesh.traverse(child=>{
+        if(!child.isBone)return;
+        const n=child.name;
+        if(/頭|[Hh]ead/.test(n)){
+          child.rotation.y=Math.sin(t*e.speed*.6)*.04;
+          child.rotation.z=curEmotion==='sad'?-.05:0;
+        }
+        if(/左腕|[Ll]eft.*[Aa]rm/.test(n))child.rotation.z=Math.sin(t*.5)*.03-.04;
+        if(/右腕|[Rr]ight.*[Aa]rm/.test(n))child.rotation.z=Math.sin(t*.5+1)*.03+.04;
+      });
     }
     renderer.render(scene,cam);
   };
@@ -238,26 +326,27 @@ function startLoop(){
 function setMorph(name,val){
   if(!mesh)return;
   mesh.traverse(c=>{
-    if(c.isMesh&&c.morphTargetDictionary){
+    if(c.isMesh&&c.morphTargetDictionary&&c.morphTargetInfluences){
       const i=c.morphTargetDictionary[name];
-      if(i!==undefined&&c.morphTargetInfluences)
-        c.morphTargetInfluences[i]=Math.max(0,Math.min(1,val));
+      if(i!==undefined)c.morphTargetInfluences[i]=Math.max(0,Math.min(1,val));
     }
   });
 }
 
 function applyEmotion(key){
   const e=EMOTIONS[key]||EMOTIONS.neutral;
+  curEmotion=key;
   document.getElementById('ev').textContent=`${e.e} ${key.toUpperCase()}`;
-  Object.keys(EMOTIONS).flatMap(k=>Object.keys(EMOTIONS[k].m)).forEach(m=>setMorph(m,0));
+  // 기존 표정 초기화
+  ALL_EXPR.forEach(m=>setMorph(m,0));
+  // 새 표정 적용
   Object.entries(e.m).forEach(([m,v])=>setMorph(m,v));
 }
 
-// ── 폴백 (파티클) ──
+// ── 폴백 ──
 function fallback(){
   hideLoading();
   document.getElementById('st').textContent='UI ONLINE';
-  // 파티클
   const geo=new THREE.BufferGeometry();
   const pos=new Float32Array(600*3);
   for(let i=0;i<pos.length;i++)pos[i]=(Math.random()-.5)*40;
@@ -266,7 +355,7 @@ function fallback(){
   scene.add(pts);
   const loop=()=>{animId=requestAnimationFrame(loop);pts.rotation.y=clock.getElapsedTime()*.05;renderer.render(scene,cam);};
   loop();
-  addMsg('s','⚠ 3D 모델 로드 실패\nGitHub에 Black.pmx, White.pmx 파일이\n있는지 확인해주세요!\n\nAI 대화는 정상 작동해요 🎵');
+  addMsg('s','⚠ 3D 모델 로드 실패\nAI 대화는 정상 작동해요 🎵');
 }
 
 function hideLoading(){
@@ -294,17 +383,15 @@ function addMsg(role,text){
   if(role==='s'){
     d.className='msg m';
     d.innerHTML=`<div class="ml">SYSTEM</div><div class="mb" style="border-color:rgba(255,180,0,.3);background:rgba(255,180,0,.06);white-space:pre-line">${text}</div>`;
-  } else if(role==='u'){
+  }else if(role==='u'){
     d.className='msg u';
     d.innerHTML=`<div class="ml">YOU</div><div class="mb">${text}</div>`;
-  } else {
+  }else{
     d.className='msg m';
     d.innerHTML=`<div class="ml">MIKU</div><div class="mb">${text}</div>`;
   }
-  box.appendChild(d);
-  box.scrollTop=box.scrollHeight;
+  box.appendChild(d);box.scrollTop=box.scrollHeight;
 }
-
 function showTyping(){
   const box=document.getElementById('msgs');
   const d=document.createElement('div');
@@ -322,15 +409,26 @@ window.saveKey=function(){
   document.getElementById('aks').style.borderColor='rgba(57,197,187,.4)';
   document.getElementById('akl').textContent='✓ API KEY SAVED';
   document.getElementById('akl').style.color='rgba(57,197,187,.8)';
-  addMsg('s','API 키 저장 완료! 이제 미쿠와 대화해봐요 🎵');
+  addMsg('s','API 키 저장 완료! 미쿠와 대화해봐요 🎵');
 };
+
+// ── 텍스트 정제 (이모지·기호 제거) ──
+function cleanForTTS(text){
+  return text
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu,'')   // 이모지
+    .replace(/[\u2600-\u27BF]/g,'')            // 기타 기호 ♪♫★☆✨
+    .replace(/[♪♫♩♬★☆◆◇■□▲△●○]/g,'')
+    .replace(/\[EMOTION:\w+\]/g,'')
+    .replace(/[#*`~]/g,'')
+    .trim();
+}
 
 // ── Gemini 호출 ──
 async function gemini(text){
   if(!KEY)return'먼저 API 키를 입력해주세요!';
   const sys=`너는 하츠네 미쿠야. 귀엽고 밝은 버추얼 아이돌이야.
 반드시 한국어로만 대답해. 일본어 절대 쓰지마.
-짧고 친근하게 말해. 이모지 가끔 써.
+짧고 친근하게 말해. 이모지나 특수문자 기호는 절대 쓰지마. 텍스트만 써.
 답변 끝에 반드시 [EMOTION:happy] [EMOTION:sad] [EMOTION:angry] [EMOTION:surprised] [EMOTION:neutral] 중 하나 붙여.`;
   try{
     const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${KEY}`,{
@@ -354,45 +452,164 @@ window.send=async function(t){
   inp.value='';
   addMsg('u',msg);showTyping();
   const rep=await gemini(msg);
-  rmTyping();addMsg('m',rep);speak(rep);
+  rmTyping();addMsg('m',rep);
+  speak(rep);
 };
 
-// ── TTS 한국어 ──
+// ── TTS: 일본어 하이톤 여성 ──
 function speak(text){
   if(!speechSynthesis)return;
-  const clean=text.replace(/[\u{1F300}-\u{1FFFF}]/gu,'').replace(/[\u3000-\u9fff]/g,'').replace(/[♪♫★☆]/g,'').trim();
+  const clean=cleanForTTS(text);
   if(!clean)return;
+
+  // 일본어로 번역해서 읽기 위해 한국어 텍스트를 일본어 발음으로
   const u=new SpeechSynthesisUtterance(clean);
   const vs=speechSynthesis.getVoices();
-  const v=vs.find(v=>v.lang==='ko-KR'&&/female|yuna/i.test(v.name))||vs.find(v=>v.lang==='ko-KR')||vs.find(v=>v.lang.startsWith('ko'));
-  if(v)u.voice=v;
-  u.lang='ko-KR';u.pitch=1.4;u.rate=1.05;
+
+  // 일본어 여성 목소리 우선 선택
+  const jaVoice=
+    vs.find(v=>v.lang==='ja-JP'&&/nanami|haruka|kyoko|ichiro/i.test(v.name))||
+    vs.find(v=>v.lang==='ja-JP'&&/female|woman/i.test(v.name))||
+    vs.find(v=>v.lang==='ja-JP');
+
+  // 일본어 목소리가 있으면 사용, 없으면 한국어
+  if(jaVoice){
+    u.voice=jaVoice;
+    u.lang='ja-JP';
+  } else {
+    const koVoice=vs.find(v=>v.lang==='ko-KR'&&/female|yuna/i.test(v.name))||vs.find(v=>v.lang==='ko-KR');
+    if(koVoice)u.voice=koVoice;
+    u.lang='ko-KR';
+  }
+
+  u.pitch=1.6;   // 하이톤
+  u.rate=1.1;
+
   u.onstart=()=>{speaking=true;lipT=0;};
   u.onend=()=>{speaking=false;VOWELS.forEach(m=>setMorph(m,0));};
-  speechSynthesis.cancel();speechSynthesis.speak(u);
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+// ── 마이크 볼륨 시각화 ──
+async function startVolViz(){
+  try{
+    audioCtx=new AudioContext();
+    micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const src=audioCtx.createMediaStreamSource(micStream);
+    analyser=audioCtx.createAnalyser();
+    analyser.fftSize=256;
+    src.connect(analyser);
+    const buf=new Uint8Array(analyser.frequencyBinCount);
+    const bars=document.querySelectorAll('.vb');
+    const wrap=document.getElementById('vol-wrap');
+    const volText=document.getElementById('vol-text');
+    wrap.classList.add('active');
+
+    const draw=()=>{
+      volAnimId=requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(buf);
+      // 12개 바에 주파수 매핑
+      const step=Math.floor(buf.length/12);
+      let total=0;
+      bars.forEach((bar,i)=>{
+        const val=buf[i*step]||0;
+        total+=val;
+        const h=Math.max(2,val/255*24);
+        bar.style.height=h+'px';
+        const g=Math.floor(val/255*100);
+        bar.style.background=`rgb(${57+g},${197-g*0.5},${187-g})`;
+      });
+      const avg=Math.round(total/12/255*100);
+      volText.textContent=avg+'%';
+    };
+    draw();
+  }catch(e){
+    console.warn('마이크 접근 실패:',e);
+  }
+}
+
+function stopVolViz(){
+  if(volAnimId)cancelAnimationFrame(volAnimId);
+  if(micStream)micStream.getTracks().forEach(t=>t.stop());
+  if(audioCtx)audioCtx.close();
+  audioCtx=null;analyser=null;micStream=null;
+  document.getElementById('vol-wrap').classList.remove('active');
+  document.querySelectorAll('.vb').forEach(b=>{b.style.height='2px';});
+  document.getElementById('vol-text').textContent='0%';
 }
 
 // ── STT ──
-window.toggleMic=function(){
-  if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){alert('Chrome을 써주세요!');return;}
-  if(listening){recog?.stop();return;}
+window.toggleMic=async function(){
+  if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){
+    alert('Chrome 브라우저를 써주세요!');return;
+  }
+  if(listening){
+    recog?.stop();
+    stopVolViz();
+    return;
+  }
+
+  // 볼륨 시각화 시작
+  await startVolViz();
+
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  recog=new SR();recog.lang='ko-KR';recog.interimResults=true;recog.continuous=false;
+  recog=new SR();
+  recog.lang='ko-KR';
+  recog.interimResults=true;
+  recog.continuous=false;
+  recog.maxAlternatives=3;  // 여러 후보 중 최선 선택
+
   const btn=document.getElementById('mb2'),hint=document.getElementById('mh');
-  recog.onstart=()=>{listening=true;btn.classList.add('on');btn.textContent='🔴 듣는 중...';hint.textContent='말이 끝나면 자동 전송';};
-  recog.onresult=e=>{document.getElementById('ti').value=Array.from(e.results).map(r=>r[0].transcript).join('');};
-  recog.onend=()=>{
-    listening=false;btn.classList.remove('on');btn.textContent='🎤 마이크로 말하기';hint.textContent='클릭하면 음성인식 시작';
-    const v=document.getElementById('ti').value.trim();if(v)window.send(v);
+
+  recog.onstart=()=>{
+    listening=true;
+    btn.classList.add('on');
+    btn.textContent='🔴 듣는 중...';
+    hint.textContent='말이 끝나면 자동 전송';
   };
-  recog.onerror=e=>{listening=false;btn.classList.remove('on');btn.textContent='🎤 마이크로 말하기';if(e.error==='not-allowed')hint.textContent='마이크 권한을 허용해주세요!';};
+
+  recog.onresult=e=>{
+    // 가장 신뢰도 높은 결과 선택
+    let best='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i][0].transcript.length>best.length){
+        best=e.results[i][0].transcript;
+      }
+    }
+    document.getElementById('ti').value=best;
+  };
+
+  recog.onend=()=>{
+    listening=false;
+    btn.classList.remove('on');
+    btn.textContent='🎤 마이크로 말하기';
+    hint.textContent='클릭하면 음성인식 시작';
+    stopVolViz();
+    const v=document.getElementById('ti').value.trim();
+    if(v)window.send(v);
+  };
+
+  recog.onerror=e=>{
+    listening=false;
+    btn.classList.remove('on');
+    btn.textContent='🎤 마이크로 말하기';
+    stopVolViz();
+    if(e.error==='not-allowed')hint.textContent='마이크 권한을 허용해주세요!';
+    else if(e.error==='no-speech')hint.textContent='목소리를 감지 못했어요. 다시 시도해봐요';
+    else hint.textContent=`오류: ${e.error}`;
+  };
+
   recog.start();
 };
 
 // ── 시작 ──
 init3D();
 loadMiku();
-if(speechSynthesis){speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();}
+if(speechSynthesis){
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();
+}
 </script>
 </body>
 </html>
